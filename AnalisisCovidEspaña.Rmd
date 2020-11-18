@@ -9,16 +9,19 @@ output: pdf_document
 knitr::opts_chunk$set(echo=TRUE)
 library(lubridate)
 library(knitr)
+library(tidyverse)
 Meses <- c("E", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")
 ```
 
 ## Introducción
 
-Este es un ejercicio básico de análisis de los datos de la incidencia de la COVID-19 en España a lo largo de 2020. Habiendo la cantidad de informes y herramientas para el análisis de los datos sobre la incidencia de la COVID-19 que ya existen, este documento no pretende aportar nada singularmente nuevo y su razón de ser no es otra que poner en práctica y profundizar por mi parte en el aprendizaje de las técnicas de análisis de datos y el lenguaje R que he iniciado a finales de este año 2020.
+Este es un ejercicio básico de análisis de los datos de la incidencia de la COVID-19 en España a lo largo de 2020. Habiendo la cantidad de informes y herramientas para el análisis de los datos sobre la incidencia de la COVID-19 que ya existen, este documento no pretende aportar nada singularmente nuevo y su razón de ser no es otra que poner en práctica y profundizar por mi parte en el aprendizaje de las técnicas de análisis de datos y el lenguaje R que he iniciado en la segunda mitad de septiembre de 2020.
 
 Los datos de partida son los publicados por el Gobierno de España en la web **datos.gob.es** a través del siguiente enlace: <https://datos.gob.es/es/catalogo/e05070101-evolucion-de-enfermedad-por-el-coronavirus-covid-19>.
 
 El grueso del informe se centra sobre los totales en España agregando los datos disponibles por Comunidades Autónomas, aunque también se muestran información de las CCAA de Madrid y Cantabria. La razón de la selección de estas dos comunidades y no otras es simple y llanamente que nací y crecí en la última y mantengo vínculos familiares y de amistad allí, mientras que en la primera he pasado básicamente la mitad de mi vida, sigo viviendo en ella y previsiblemente así seguirá siendo en los próximos años.
+
+## Proceso metodológico y software utilizado
 
 El archivo de datos no ha sido sometido a ningún tipo de modificación o alteración previa y su manipulación en este análisis es el mínimo imprescindible para permitir el tratamiento de los datos y obtención de resultados.
 
@@ -37,6 +40,7 @@ Se ha hecho uso también de los paquetes complementarios:
 
 * **lubridate** para facilitar el manejo de fechas. (2)
 * **knitr** para mejorar la apariencia de tablas. (3)
+* **tydiverse** por los paquetes que incluye para ayudar en la extracción de la información y los gráficos mejorados de **ggplot2**. (4)
 
 ## Incidencia mensual y número total de casos detectados desde el inicio de 2020
 
@@ -45,68 +49,60 @@ La evolución de número de casos notificados por meses se reflejan en la siguie
 ```{r IncidenciaMensual}
 CasosMensuales <- tapply(Datos$num_casos, month(Datos$fecha), sum)
 TotalCasosOrigen <- sum(Datos$num_casos)
-PorcentajePoblacion <- paste(format(TotalCasosOrigen / 47.4E+06 *100, digits = 4), "%")
-TCasosMensuales <- cbind(head(Meses, length(CasosMensuales)), 
+PorcentajePoblacion <- paste(format(TotalCasosOrigen / 47.4E+06 *100, digits = 4, 
+    decimal.mark = ","), "%")
+TablaCasosMensuales <- cbind(head(Meses, length(CasosMensuales)), 
     format(CasosMensuales, big.mark = ".", decimal.mark = ","))
-colnames(TCasosMensuales) <- c("Mes", "Nº Casos Mensuales")
+colnames(TablaCasosMensuales) <- c("Mes", "Nº casos mensuales")
+kable(TablaCasosMensuales, align = "r")
+plot(CasosMensuales, type = "h")
 ```
 
-```{r Tabla y Gráfico Datos Mensuales, echo=FALSE}
-kable(TCasosMensuales, align = "r")
-plot(CasosMensuales, type = "s")
-```
+El número total de casos acumulados desde el 1 de enero de 2020 hasta la fecha indicada en el punto anterior según los datos oficiales disponibles en ese momento ascienden a un total de **`r format(TotalCasosOrigen, big.mark = ".", decimal.mark = ",")`**.
 
-El número total de casos acumulados desde el 1 de enero de 2020 hasta la fecha indicada en el punto anterior según los datos oficiales disponibles en ese momento ascienden a un total de `r format(TotalCasosOrigen, big.mark = ".", decimal.mark = ",")`.
-
-Considerando una población en España de 47,4 millones de personas según los datos publicados por el INE (Instituto Nacional de Estadística) correspondiente al inicio de año, el porcentaje de contagio de la población es `r PorcentajePoblacion`.
-
-Llama singularmente la atención la baja tasa de contagio entre la población en contraste con el colapso hospitalario sufrido tanto en el los primeros meses del año como el que se parece estar sufriendo en estas últimas semanas. Antes de llegar a una conclusión precipitada sobre una insuficiencia estructural de medios de atención, hay que tener en cuenta dos factores fundamentales de la COVID-19 que no han sido analizados en este estudio que probablemente la distingan de otras enfermedades y patologías:
-
-* Aunque el porcentaje de personas infectadas sea bajo, el porcentaje de infectados que requieran atención especial tipo UCI puede ser, y probablemente así sea, muy elevado.
-* Otro factor a tener en cuenta es el tiempo por el que se van a tener que prolongar esos cuidados especiales, al menos en comparación con las patologías más comunes que normalmente se atienden en las UCIs.
+Considerando una población en España de 47,4 millones de personas según los datos publicados por el INE (Instituto Nacional de Estadística) correspondiente al inicio de año, el porcentaje de contagio de la población es del **`r PorcentajePoblacion`** hasta la fecha.
 
 ## Incidencia semanal
 
-Evolución de número de casos notificados por semanas:
+### - Evolución de número de casos identificados por semanas:
 
 ```{r IncidenciaSemanal}
 CasosSemanales <- tapply(Datos$num_casos, week(Datos$fecha), sum)
-plot(CasosSemanales, type = "s")
+plot(CasosSemanales, type = "h")
 ```
 
 ## Incidencia diaria
 
-Curva epidémica de los casos notificados por días:
+### - Curva epidémica de los casos notificados por días:
 
 ```{r IncidenciaDiaria}
 CasosDiarios <- tapply(Datos$num_casos, yday(Datos$fecha), sum)
-plot(CasosDiarios, type = "s")
+plot(CasosDiarios, type = "h")
 ```
 
-Gráfico de casos acumulados a origen por días:
+### - Gráfico de casos acumulados a origen por días:
 
 ```{r}
 CasosDiariosAcumul <- cumsum(CasosDiarios)
-plot(CasosDiariosAcumul, type = "s")
+plot(CasosDiariosAcumul, type = "h")
 ```
 
 ## Detalle del número de casos en los dos primeros meses de 2020
 
-Evolución diaria del número de casos durante los dos primeros meses del año:
+### - Evolución diaria del número de casos durante los dos primeros meses del año:
 
 ```{r EneroFebrero}
 PeriodoEF <- seq.Date(
   from = as.Date("2020-01-01"),
   to = as.Date("2020-02-29"),
-  by = "day"
-)
+  by = "day")
 DatosEF <- subset(Datos, fecha %in% PeriodoEF)
 CasosDiariosEF <<- tapply(DatosEF$num_casos, yday(DatosEF$fecha), sum)
 TotalCasosEF <- sum(DatosEF$num_casos)
-plot(CasosDiariosEF, type = "s")
+plot(CasosDiariosEF, type = "h")
 ```
 
-Los casos reportados totales a lo largo de esos dos meses son `r format(TotalCasosEF, big.mark = ".", decimal.mark = ",")`, si bien es claro que se produce una acusada inflexión en la pendiente de evolución a partir del día 50.
+Los casos reportados totales a lo largo de esos dos meses son **`r format(TotalCasosEF, big.mark = ".", decimal.mark = ",")`**, si bien es claro que se produce una acusada inflexión en la pendiente de crecimiento a partir del día 50.
 
 ```{r Primeros50+10}
 Periodo1_50 <- seq.Date(
@@ -124,29 +120,121 @@ TotalCasos51_60 <- sum(Datos51_60$num_casos)
 ```
 
 
-Siendo así que el desglose de número afregado de casos identificados en dichos primeros 50 días y los siguientes 10 días queda de la siguiente manera:
+Siendo así que el desglose de número agregado de casos identificados en dichos primeros 50 días y los siguientes 10 días queda de la siguiente manera:
 
 * Periodo 1-50: `r TotalCasos1_50`
 * Periodo 51-60: `r format(TotalCasos51_60, big.mark = ".", decimal.mark = ",")`
 
-```{r Primera Semana Marzo}
-PeriodoSem1mar <- seq.Date(
+En 10 días se detectan **`r format(round(TotalCasos51_60/TotalCasos1_50, digits = 1), decimal.mark = ",")`** veces los casos que se habían producido en los 50 días anteriores.
+
+## Subsiguiente evolución durante la primera quincena de marzo
+
+En este apartado analizamos cómo continúa desarrollándose la propagación de la pandemia a principos del mes de marzo, estableciendo por su relevancia en lo ocurrido en España durante esos días dos periodos de tiempo diferenciados, del 1 al 8 y del 9 al 15.
+
+```{r Primeros Quince Dias Marzo}
+Periodo1_8mar <- seq.Date(
   from = as.Date("2020-03-01"),
-  to = as.Date("2020-03-07"),
+  to = as.Date("2020-03-08"),
   by = "day")
-DatosSem1mar <- subset(Datos, fecha %in% PeriodoSem1mar)
-CasosDiariosSem1mar <- tapply(DatosSem1mar$num_casos, yday(DatosSem1mar$fecha), sum)
-TotalCasosSem1mar <- sum(DatosSem1mar$num_casos)
+Periodo9_15mar <- seq.Date(
+  from = as.Date("2020-03-09"),
+  to = as.Date("2020-03-15"),
+  by = "day")
+Datos1_8mar <- subset(Datos, fecha %in% Periodo1_8mar)
+Datos9_15mar <- subset(Datos, fecha %in% Periodo9_15mar)
+CasosDiarios1_8mar <- tapply(Datos1_8mar$num_casos, yday(Datos1_8mar$fecha), sum)
+CasosDiarios9_15mar <- tapply(Datos9_15mar$num_casos, yday(Datos9_15mar$fecha), sum)
+TotalCasos1_8mar <- sum(Datos1_8mar$num_casos)
+TotalCasos9_15mar <- sum(Datos9_15mar$num_casos)
 ```
 
-En los primeros siete días de marzo la progresión diaria de nuevos casos siguió disparándose, resultando un total de `r format(TotalCasosSem1mar, big.mark = ".", decimal.mark = ",")` casos a añadir al total anterior, siendo éstos `r round(TotalCasosSem1mar/TotalCasosEF, digits = 1)` veces los registrados a lo largo de enero y febrero. 
+En los primeros ocho días de marzo la progresión diaria de nuevos casos siguió disparándose, resultando un total de **`r format(TotalCasos1_8mar, big.mark = ".", decimal.mark = ",")`** casos a añadir al total anterior, siendo éstos **`r format(round(TotalCasos1_8mar/TotalCasosEF, digits = 1), decimal.mark = ",")`** veces los registrados a lo largo de todo enero y febrero.
 
-Gráfico del número de casos diarios desde inicio de año 2020 hasta el 7 de marzo: 
+Durante los siguientes siete días, del 9 al 15 de marzo, los casos a sumar fueron **`r format(TotalCasos9_15mar, big.mark = ".", decimal.mark = ",")`**, lo que supone **`r format(round(TotalCasos9_15mar/TotalCasos1_8mar, digits = 1), decimal.mark = ",")`** veces los notificados en los 8 primeros días del mes.
 
-```{r Casos Diarios Hasta 7mar, echo=FALSE}
-CasosDiariosHasta7mar <- c(CasosDiariosEF, CasosDiariosSem1mar)
-plot(CasosDiariosHasta7mar, type = "s")
+### - Gráfico del número de casos diarios desde el 1 de enero hasta el 15 de marzo de 2020: 
+
+```{r Casos Diarios Hasta 14mar}
+CasosDiariosHasta15mar <- c(CasosDiariosEF, CasosDiarios1_8mar, CasosDiarios9_15mar)
+plot(CasosDiariosHasta15mar, type = "h")
 ```
+
+## Incidencia acumulada por 100.000 habitantes en los 14 días previos a la declaración del estado de alarma del 14 de marzo
+
+Pasemos ahora a calcular la incidencia acumulada por cada 100.000 habitantes en los 14 días previos a la declaración del estado de alarma que tuvo efecto
+
+```{r Incidencia Acumulada Previa Estado Alarma}
+PeriodoPrevioEstadoAlarma <- seq.Date(
+  from = as.Date("2020-02-29"),
+  to = as.Date("2020-03-13"),
+  by = "day")
+DatosPrevioEstadoAlarma <- subset(Datos, fecha %in% PeriodoPrevioEstadoAlarma)
+IncidAcumPrevioEstadoAlarma <- sum(DatosPrevioEstadoAlarma$num_casos)/47.4E+06*1E+05
+```
+
+Tomando esos 14 días previos, es decir, entre el 29 de febrero y el 13 de marzo, la incidencia acumulada por cada 100.000 habitantes, con el mismo dato de población presentado más arriba fue de **`r round(IncidAcumPrevioEstadoAlarma)`** casos/100.000 hab.
+
+Contrasta este valor de forma muy llamativa con los límites que se han estado manejando en la segunda ola de infecciones, donde se ha hablado de 200, 500 e incluso 1.000 casos/100.000 hab.
+
+## Evolución de la incidencia acumulada a lo largo de todo el año
+
+```{r Evol Incidencia Acumulada}
+Fechas <- seq.Date(as.Date("2020-01-01"), by = "day", length.out = length(CasosDiarios))
+UltFecha <- Fechas[length(Fechas)]
+stopifnot(UltFecha == max(Datos$fecha))  ## Prueba interna consistencia datos
+
+## Inicialización de variables
+dfFechasCasos <- data.frame(Fechas, CasosDiarios)
+InicioPeriodo14 <- as.Date("2020-01-01")
+FinPeriodo14 <- InicioPeriodo14 + 13
+IncidAcum14 <- data.frame(Fecha=as.Date(character()), IA14=integer()) 
+IA14aux <- as.integer()
+InicioPeriodo7 <- as.Date("2020-01-01")
+FinPeriodo7 <- InicioPeriodo7 + 6
+IncidAcum7 <- data.frame(Fecha=as.Date(character()), IA7=integer()) 
+IA7aux <- as.integer()
+## Incidencia acumulada 14 días
+while (FinPeriodo14 <= UltFecha) {
+        IA14aux <- 0
+        Periodo14 <- seq.Date(
+                from = InicioPeriodo14,
+                to = FinPeriodo14,
+                by = "day")
+        DatosIA14 <- subset(dfFechasCasos, Fechas %in% Periodo14)
+        IA14aux <- round(sum(DatosIA14$CasosDiarios)/47.4E+06*1E+05, digits = 0)
+        IncidAcum14 <- add_row(IncidAcum14, Fecha = FinPeriodo14, IA14 = IA14aux)
+        InicioPeriodo14 <- InicioPeriodo14 + 1
+        FinPeriodo14 <- FinPeriodo14 + 1
+}
+## Incidencia acumulada 7 días
+while (FinPeriodo7 <= UltFecha) {
+        IA7aux <- 0
+        Periodo7 <- seq.Date(
+                from = InicioPeriodo7,
+                to = FinPeriodo7,
+                by = "day")
+        DatosIA7 <- subset(dfFechasCasos, Fechas %in% Periodo7)
+        IA7aux <- round(sum(DatosIA7$CasosDiarios)/47.4E+06*1E+05, digits = 0)
+        IncidAcum7 <- add_row(IncidAcum7, Fecha = FinPeriodo7, IA7 = IA7aux)
+        InicioPeriodo7 <- InicioPeriodo7 + 1
+        FinPeriodo7 <- FinPeriodo7 + 1
+}
+plot(IncidAcum14, type = "h")
+plot(IncidAcum7, type = "h")
+```
+
+
+## Algunos datos complementarios
+
+El 31 de enero el director del Centro de Alertas y Emergencias Sanitarias dijo que "España no va a tener, como mucho, más allá de algún caso diagnosticado". Mentira flagrante puesto que los datos oficiales desmienten categóricamente esa afirmación ya en esa misma fecha.
+
+Ese mismo alto oficial del Ministerio de Sanidad no sólo no propuso medidas restrictivas para actos multitudinarios en los primeros días de marzo sino que animó el día 7 a la participación en las manifestaciones del 8M. Acto de todo punto irresponsable con una curva de crecimiento en clara progresión ascendente a ritmo acelerado creciente como muestran esos mismos datos oficiales.
+
+Hasta la fecha todas las querellas presentadas contra esta persona y el propio Ministro de Sanidad han sido desestimadas en los juzgados.
+
+Su respuesta a la petición de cese por parte del Consejo General de Colegios de Médicos (CGCOM) el 14 de noviembre de 2020 ha sido: "No se crean que este puesto es un regalo", añadiendo: "Yo soy un funcionario público, mi puesto es el que decidan mis superiores". Si bien es cierto que él no se puede cesar a sí mismo, sí que podría presentar su dimisión. A fecha de hoy no ha presentado su dimisión.
+
+Como es lógico las responsabilidades deberían ser escaladas a la Directora General de Salud Pública, Calidad e Innovación, a la Secretaria de Estado de Sanidad y al propio Ministro de Sanidad de acuerdo con el organigrama del propio Ministerio de Sanidad <https://www.mscbs.gob.es/organizacion/ministerio/organizacion/homeMS.htm>.
 
 ....................
 
@@ -161,3 +249,6 @@ plot(CasosDiariosHasta7mar, type = "s")
     
 (3) Yihui Xie (2020). knitr: A General-Purpose Package for Dynamic Report 
     Generation in R. R package version 1.30.
+
+(4) Wickham et al., (2019). Welcome to the tidyverse. Journal of Open
+    Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
