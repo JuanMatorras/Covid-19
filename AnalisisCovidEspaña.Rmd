@@ -58,7 +58,8 @@ TablaCasosMensuales <- data.frame(head(Meses, length(CasosMensuales)),
 TotalCasosOrigen <- sum(Datos$num_casos)
 PorcentajePoblacion <- paste(format(TotalCasosOrigen / poblESP *100, digits = 4, 
     decimal.mark = ","), "%")
-dfCasosMensuales <- data.frame(Mes = head(Meses, length(CasosMensuales)), Casos =  CasosMensuales)
+dfCasosMensuales <- data.frame(Mes = head(Meses, length(CasosMensuales)), 
+                               Casos =  CasosMensuales)
 dfCasosMensuales$Mes <- factor(dfCasosMensuales$Mes, levels = dfCasosMensuales$Mes)
 d <- ggplot(dfCasosMensuales, aes(Mes, Casos))
 d + geom_col()
@@ -288,8 +289,8 @@ IncidenciaCantabriaMadrid <- data.frame(CasosCantabriaMadrid$Fecha,
                                         CasosDiariosCantabria$Casos/poblCANT*1E+05, 
                                         CasosDiariosMadrid$Casos/poblMAD*1E+05)
 colnames(IncidenciaCantabriaMadrid) <- c("Fecha", "IncidCANT", "IncidMAD")
-g <- ggplot(IncidenciaCantabriaMadrid, aes(Fecha)) + labs(y = "Incidencia (Casos/
-                                                          100.000 hab.)")
+g <- ggplot(IncidenciaCantabriaMadrid, aes(Fecha)) + 
+        labs(y = "Incidencia (Casos / 100.000 hab.)")
 g <- g + geom_step(aes(y=IncidMAD), colour="blue")
 g <- g + geom_step(aes(y=IncidCANT), colour="red")
 g
@@ -318,8 +319,8 @@ while (FinPeriodo14 <= UltFecha) {
         InicioPeriodo14 <- InicioPeriodo14 + 1
         FinPeriodo14 <- FinPeriodo14 + 1
 }
-g <- ggplot(IA14_CantabriaMadrid, aes(Fecha)) + labs(y = "Incidencia acumulada 14 
-                                                     días / 100.000 hab.")
+g <- ggplot(IA14_CantabriaMadrid, aes(Fecha)) + 
+        labs(y = "Incidencia acumulada 14 días / 100.000 hab.")
 g <- g + geom_step(aes(y=IA14_MAD), colour="blue")
 g <- g + geom_step(aes(y=IA14_CANT), colour="red")
 g
