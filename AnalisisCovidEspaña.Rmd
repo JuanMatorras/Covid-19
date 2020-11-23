@@ -22,17 +22,19 @@ Este es un ejercicio básico de análisis de los datos de la incidencia de la CO
 
 Los datos de partida son los publicados por el Gobierno de España en la web **datos.gob.es** a través del siguiente enlace: <https://datos.gob.es/es/catalogo/e05070101-evolucion-de-enfermedad-por-el-coronavirus-covid-19>.
 
-El grueso del informe se centra sobre los totales en España agregando los datos disponibles por Comunidades Autónomas, aunque también se muestran información de las CCAA de Madrid y Cantabria. La razón de la selección de estas dos comunidades y no otras es simple y llanamente que nací y crecí en la última y mantengo vínculos familiares y de amistad allí, mientras que en la primera he pasado básicamente la mitad de mi vida, sigo viviendo en ella y previsiblemente así seguirá siendo en los próximos años.
+El grueso del informe se centra sobre los totales en España agregando los datos disponibles por Comunidades Autónomas, aunque también se muestran información de las CCAA de Madrid y Cantabria. La razón de la selección de estas dos comunidades y no otras es simple y llanamente que nací y crecí en la última, mantenniendo allí vínculos familiares y de amistad, mientras que en la primera he pasado prácticamente la mitad de mi vida, sigo viviendo en ella y previsiblemente así seguirá siendo en los próximos años.
 
 ## Proceso metodológico y software utilizado
 
 El archivo de datos no ha sido sometido a ningún tipo de modificación o alteración previa y su manipulación en este análisis es el mínimo imprescindible para permitir el tratamiento de los datos y obtención de resultados.
 
-```{r LecturaDatos}
+```{r Lectura de Datos y Simplificación de tabla}
 DatosCompletos <- read.csv(file.path("data", "datos_ccaas.csv"))
 ## Descartamos el método de detección (PCR, antígenos,...)
 DatosCCAAs <- DatosCompletos[, 1:3]
+## Adecuación formato fechas para su correcta lectura
 DatosCCAAs$fecha <- as.Date(DatosCCAAs$fecha, format = "%Y-%m-%d")
+## Agrupación de imformación de CCAA para datos a nivel nacional
 Datos <- DatosCCAAs %>% group_by(fecha) %>% summarise(num_casos = sum(num_casos), 
                                                       .groups = 'drop')
 ```
@@ -51,7 +53,7 @@ Se ha hecho uso también de los paquetes complementarios:
 
 La evolución de número de casos notificados por meses se reflejan en la siguiene tabla y el gráfico que la acompaña:
 
-```{r IncidenciaMensual}
+```{r Incidencia Mensual}
 CasosMensuales <- tapply(Datos$num_casos, month(Datos$fecha), sum)
 TablaCasosMensuales <- data.frame(head(Meses, length(CasosMensuales)), 
         format(CasosMensuales, big.mark = ".", decimal.mark = ","))
@@ -75,7 +77,7 @@ Considerando una población en España de **`r format(poblESP/1E+06, big.mark = 
 
 ### - Evolución de número de casos identificados por semanas:
 
-```{r IncidenciaSemanal}
+```{r Incidencia Semanal}
 CasosSemanales <- tapply(Datos$num_casos, week(Datos$fecha), sum)
 dfCasosSemanales <- data.frame(Semana = 1:length(CasosSemanales), Casos =  
                                        CasosSemanales)
@@ -87,7 +89,7 @@ d + geom_col()
 
 ### - Curva epidémica de los casos notificados por días:
 
-```{r IncidenciaDiaria}
+```{r Incidencia Diaria}
 dfCasosDiarios <- data.frame(Fecha = Datos$fecha, Casos = Datos$num_casos)
 d <- ggplot(dfCasosDiarios, aes(Fecha, Casos))
 d + geom_col()
@@ -121,7 +123,7 @@ d + geom_col()
 
 Los casos reportados totales a lo largo de esos dos meses son **`r format(TotalCasosEF, big.mark = ".", decimal.mark = ",")`**, si bien es claro que se produce una acusada inflexión en la pendiente de crecimiento a partir del día 50.
 
-```{r Primeros50+10}
+```{r Primeros 50+10 días}
 Periodo1_50 <- seq.Date(
   from = as.Date("2020-01-01"),
   to = as.Date("2020-02-19"),
@@ -148,7 +150,7 @@ En 10 días se detectan **`r format(round(TotalCasos51_60/TotalCasos1_50, digits
 
 En este apartado analizamos cómo continúa desarrollándose la propagación de la pandemia a principos del mes de marzo, estableciendo por su relevancia en lo ocurrido en España durante esos días dos periodos de tiempo diferenciados, del 1 al 8 y del 9 al 15.
 
-```{r Primeros Quince Dias Marzo}
+```{r Primeros Quince Días Marzo}
 Periodo1_8mar <- seq.Date(
   from = as.Date("2020-03-01"),
   to = as.Date("2020-03-08"),
@@ -171,7 +173,7 @@ Durante los siguientes siete días, del 9 al 15 de marzo, los casos a sumar fuer
 
 ### - Gráfico del número de casos diarios desde el 1 de enero hasta el 15 de marzo de 2020: 
 
-```{r Casos Diarios Hasta 14mar}
+```{r Casos Diarios Hasta 15mar}
 CasosDiariosHasta15mar <- c(CasosDiariosEF, CasosDiarios1_8mar, CasosDiarios9_15mar)
 dfCasosDiariosHasta15mar <- data.frame(Fecha = 1:length(CasosDiariosHasta15mar), Casos = 
                                                CasosDiariosHasta15mar)
@@ -198,9 +200,9 @@ Contrasta este valor de forma muy llamativa con los límites que se han estado m
 
 ## Evolución de la incidencia acumulada a lo largo de todo el año
 
-En el siguiente gráfico se representan las incidencias acumuladas por cada 100.000 habitantes a lo largo de 14 días (azul) y 7 días (rojo):
+En el siguiente gráfico se representan las incidencias acumuladas por cada 100.000 habitantes correspondientes a periodos de 14 y 7 días:
 
-```{r Evol Incidencia Acumulada}
+```{r Evolución de la Incidencia Acumulada}
 Fechas <- seq.Date(as.Date("2020-01-01"), by = "day", length.out = 
                            length(dfCasosDiarios$Fecha))
 UltFecha <- Fechas[length(Fechas)]
@@ -255,14 +257,16 @@ while (FinPeriodo7 <= UltFecha) {
 IncidAcum7_14 <- add_column(IncidAcum7, IA14=c(rep(0, 7), IncidAcum14$IA14))
                 ## 7 primeros valores deberían ser NA, 0 para evitar aviso
 g <- ggplot(IncidAcum7_14, aes(Fecha)) + labs(y = "Incidencia Acumulada 7/14 días")
-g <- g + geom_col(aes(y=IA14), colour="blue")
-g <- g + geom_col(aes(y=IA7), colour="red")
+g <- g + scale_fill_manual(name="Inc.Acum./100.000", 
+                           values = c("14 días" = "blue", "7 días" = "red"))
+g <- g + geom_col(aes(y=IA14, fill="14 días"))
+g <- g + geom_col(aes(y=IA7, fill="7 días"))
 g
 ```
 
 ## Comparación de la evolución del número de casos entre Cantabria y Madrid
 
-En el siguiente gráfico se compara la evolución de la enfermedad entre dos comunidades muy diferentes, Cantabria (rojo) y la Comunidad Autónoma de Madrid (azul):
+En el siguiente gráfico se compara la evolución de la enfermedad entre dos comunidades muy diferentes, Cantabria y la Comunidad Autónoma de Madrid:
 
 ```{r Casos reportados en Cantabria y Madrid}
 ## ISO CCAA: Cantabria = CB, Madrid = MD
@@ -275,8 +279,10 @@ colnames(CasosDiariosMadrid) <- c("Fecha", "Casos")
 CasosCantabriaMadrid <- add_column(CasosDiariosCantabria, CasosDiariosMadrid$Casos)
 colnames(CasosCantabriaMadrid) <- c("Fecha", "CasosCANT", "CasosMAD")
 g <- ggplot(CasosCantabriaMadrid, aes(Fecha)) + labs(y = "Casos reportados")
-g <- g + geom_col(aes(y=CasosMAD), colour="blue")
-g <- g + geom_col(aes(y=CasosCANT), colour="red")
+g <- g + scale_fill_manual(name="Nº de casos", 
+                           values = c("Madrid" = "blue", "Cantabria" = "red"))
+g <- g + geom_col(aes(y=CasosMAD, fill="Madrid"))
+g <- g + geom_col(aes(y=CasosCANT, fill="Cantabria"))
 g
 ```
 
@@ -291,14 +297,18 @@ IncidenciaCantabriaMadrid <- data.frame(CasosCantabriaMadrid$Fecha,
 colnames(IncidenciaCantabriaMadrid) <- c("Fecha", "IncidCANT", "IncidMAD")
 g <- ggplot(IncidenciaCantabriaMadrid, aes(Fecha)) + 
         labs(y = "Incidencia (Casos / 100.000 hab.)")
-g <- g + geom_step(aes(y=IncidMAD), colour="blue")
-g <- g + geom_step(aes(y=IncidCANT), colour="red")
+g <- g + scale_color_manual(name="Incidencia/100.000", 
+                            values = c("Madrid" = "blue", "Cantabria" = "red"))
+g <- g + geom_step(aes(y=IncidMAD, colour="Madrid"))
+g <- g + geom_step(aes(y=IncidCANT, colour="Cantabria"))
+g <- g + theme(legend.justification = "center")
+g <- g + theme(legend.position = "right")
 g
 ```
 
-Por completar la información comparativa entre ambas comunidades se adjunta también la incidencia acumulada en 14 días para ambas áreas geográficas (Cantabria en rojo, Madrid en azul):
+Por completar la información comparativa entre ambas comunidades se adjunta también la incidencia acumulada en 14 días para ambas áreas geográficas, junto con la correspondiente al conjunto del territorio nacional:
 
-```{r Incidencias acumuladas 14 días Cantabria y Madrid}
+```{r Incidencias acumuladas 14 días Cantabria y Madrid + España}
 InicioPeriodo14 <- as.Date("2020-01-01")
 FinPeriodo14 <- InicioPeriodo14 + 13
 IA14_CantabriaMadrid <- data.frame(Fecha=as.Date(character()), IA14_CANT=integer(), 
@@ -319,25 +329,21 @@ while (FinPeriodo14 <= UltFecha) {
         InicioPeriodo14 <- InicioPeriodo14 + 1
         FinPeriodo14 <- FinPeriodo14 + 1
 }
-g <- ggplot(IA14_CantabriaMadrid, aes(Fecha)) + 
-        labs(y = "Incidencia acumulada 14 días / 100.000 hab.")
-g <- g + geom_step(aes(y=IA14_MAD), colour="blue")
-g <- g + geom_step(aes(y=IA14_CANT), colour="red")
+## Añadiendo columna con valores a nivel nacional
+IA14_CantMadNac <- add_column(IA14_CantabriaMadrid, IA14_Nacional=IncidAcum14$IA14)
+## Grádico
+g <- ggplot(IA14_CantMadNac, aes(Fecha))
+g <- g + labs(y = "Incidencia acumulada 14 días / 100.000 hab.")
+g <- g + scale_color_manual(name = "IA14/100.000", 
+                            values = c("Madrid" = "blue", "Cantabria" = 
+                                               "red", "Nacional" = "black"))
+g <- g + geom_step(aes(y=IA14_MAD, color="Madrid"))
+g <- g + geom_step(aes(y=IA14_CANT, color="Cantabria"))
+g <- g + geom_step(aes(y=IA14_Nacional, color="Nacional"))
+g <- g + theme(legend.justification = "center")
+g <- g + theme(legend.position = "right")
 g
 ```
-
-
-## Algunos datos complementarios
-
-El 31 de enero el director del Centro de Alertas y Emergencias Sanitarias dijo que "España no va a tener, como mucho, más allá de algún caso diagnosticado". Mentira flagrante puesto que los datos oficiales desmienten categóricamente esa afirmación ya en esa misma fecha.
-
-Ese mismo alto oficial del Ministerio de Sanidad no sólo no propuso medidas restrictivas para actos multitudinarios en los primeros días de marzo sino que animó el día 7 a la participación en las manifestaciones del 8M. Acto de todo punto irresponsable con una curva de crecimiento en clara progresión ascendente a ritmo acelerado creciente como muestran esos mismos datos oficiales.
-
-Hasta la fecha todas las querellas presentadas contra esta persona y el propio Ministro de Sanidad han sido desestimadas en los juzgados.
-
-Su respuesta a la petición de cese por parte del Consejo General de Colegios de Médicos (CGCOM) el 14 de noviembre de 2020 ha sido: "No se crean que este puesto es un regalo", añadiendo: "Yo soy un funcionario público, mi puesto es el que decidan mis superiores". Si bien es cierto que él no se puede cesar a sí mismo, sí que podría presentar su dimisión. A fecha de hoy no ha presentado su dimisión.
-
-Como es lógico las responsabilidades deberían ser escaladas a la Directora General de Salud Pública, Calidad e Innovación, a la Secretaria de Estado de Sanidad y al propio Ministro de Sanidad de acuerdo con el organigrama del propio Ministerio de Sanidad <https://www.mscbs.gob.es/organizacion/ministerio/organizacion/homeMS.htm>.
 
 ....................
 
