@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 ```{r Setup, include=FALSE}
-knitr::opts_chunk$set(echo=TRUE)
+knitr::opts_chunk$set(echo=FALSE)
 library(lubridate)
 library(knitr)
 library(tidyverse)
