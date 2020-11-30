@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo=TRUE)
 library(lubridate)
 library(knitr)
 library(tidyverse)
+library(data.table)
 Sys.setlocale("LC_TIME", "es_ES.UTF-8")
 Meses <- c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", 
            "Nov", "Dic")
@@ -48,15 +49,17 @@ Se ha hecho uso también de los paquetes complementarios:
 * **lubridate** para facilitar el manejo de fechas. (2)
 * **knitr** para mejorar la apariencia de tablas. (3)
 * **tydiverse** por los paquetes que incluye para ayudar en la extracción de la información y los gráficos mejorados de **ggplot2**. (4)
+* **data.table** con el objeto de manipular las tablas más eficientemente. (5)
 
 ## Incidencia mensual y número total de casos detectados desde el inicio de 2020
 
-La evolución de número de casos notificados por meses se reflejan en la siguiene tabla y el gráfico que la acompaña:
+La evolución de número de casos notificados por meses se refleja en el gráfico que se muestra a continuación:
 
 ```{r Incidencia Mensual}
 CasosMensuales <- tapply(Datos$num_casos, month(Datos$fecha), sum)
 TablaCasosMensuales <- data.frame(head(Meses, length(CasosMensuales)), 
         format(CasosMensuales, big.mark = ".", decimal.mark = ","))
+colnames(TablaCasosMensuales) <- c("Mes", "Nº casos mensuales")
 TotalCasosOrigen <- sum(Datos$num_casos)
 PorcentajePoblacion <- paste(format(TotalCasosOrigen / poblESP *100, digits = 4, 
     decimal.mark = ","), "%")
@@ -65,9 +68,11 @@ dfCasosMensuales <- data.frame(Mes = head(Meses, length(CasosMensuales)),
 dfCasosMensuales$Mes <- factor(dfCasosMensuales$Mes, levels = dfCasosMensuales$Mes)
 d <- ggplot(dfCasosMensuales, aes(Mes, Casos))
 d + geom_col()
-colnames(TablaCasosMensuales) <- c("Mes", "Nº casos mensuales")
-kable(TablaCasosMensuales, align = "r")
 ```
+
+Correspondiente a los valores que se incluyen en la tabla siguiente:
+
+`r kable(TablaCasosMensuales, align = "r")`
 
 El número total de casos acumulados desde el 1 de enero de 2020 hasta la fecha indicada en el punto anterior según los datos oficiales disponibles en ese momento ascienden a un total de **`r format(TotalCasosOrigen, big.mark = ".", decimal.mark = ",")`**.
 
@@ -257,10 +262,10 @@ while (FinPeriodo7 <= UltFecha) {
 IncidAcum7_14 <- add_column(IncidAcum7, IA14=c(rep(0, 7), IncidAcum14$IA14))
                 ## 7 primeros valores deberían ser NA, 0 para evitar aviso
 g <- ggplot(IncidAcum7_14, aes(Fecha)) + labs(y = "Incidencia Acumulada 7/14 días")
-g <- g + scale_fill_manual(name="Inc.Acum./100.000", 
+g <- g + scale_color_manual(name="Inc.Acum./100.000", 
                            values = c("14 días" = "blue", "7 días" = "red"))
-g <- g + geom_col(aes(y=IA14, fill="14 días"))
-g <- g + geom_col(aes(y=IA7, fill="7 días"))
+g <- g + geom_step(aes(y=IA14, color="14 días"))
+g <- g + geom_step(aes(y=IA7, color="7 días"))
 g
 ```
 
@@ -301,8 +306,7 @@ g <- g + scale_color_manual(name="Incidencia/100.000",
                             values = c("Madrid" = "blue", "Cantabria" = "red"))
 g <- g + geom_step(aes(y=IncidMAD, colour="Madrid"))
 g <- g + geom_step(aes(y=IncidCANT, colour="Cantabria"))
-g <- g + theme(legend.justification = "center")
-g <- g + theme(legend.position = "right")
+## g <- g + theme(legend.justification = "center", legend.position = "right")
 g
 ```
 
@@ -331,22 +335,194 @@ while (FinPeriodo14 <= UltFecha) {
 }
 ## Añadiendo columna con valores a nivel nacional
 IA14_CantMadNac <- add_column(IA14_CantabriaMadrid, IA14_Nacional=IncidAcum14$IA14)
-## Grádico
+## Gráfico
 g <- ggplot(IA14_CantMadNac, aes(Fecha))
 g <- g + labs(y = "Incidencia acumulada 14 días / 100.000 hab.")
-g <- g + scale_color_manual(name = "IA14/100.000", 
+g <- g + scale_color_manual(name = "IA14d/100.000", 
                             values = c("Madrid" = "blue", "Cantabria" = 
                                                "red", "Nacional" = "black"))
 g <- g + geom_step(aes(y=IA14_MAD, color="Madrid"))
 g <- g + geom_step(aes(y=IA14_CANT, color="Cantabria"))
 g <- g + geom_step(aes(y=IA14_Nacional, color="Nacional"))
-g <- g + theme(legend.justification = "center")
-g <- g + theme(legend.position = "right")
+## g <- g + theme(legend.justification = "center", legend.position = "right")
 g
 ```
 
+## Exceso de mortalidad
+
+Como último paso del análisis obtendremos cifras del exceso de mortalidad registrado en este año, presumiblemente achacable a la incidencia de la pandemia de la COVID-19. Los datos se han obtenido del enlace del **Instituto de Salud Carlos III**: <https://momo.isciii.es/public/momo/data>.
+
+```{r Lectura de datos MoMo}
+DatosCompletosMoMo <- read.csv(file.path("data", "data.csv"))
+## Descartamos información de detalle de CCAA, sexos y grupos de edad
+DatosMoMo <- DatosCompletosMoMo[DatosCompletosMoMo$ambito == "nacional" & 
+                                DatosCompletosMoMo$cod_sexo == "all" & 
+                                DatosCompletosMoMo$cod_gedad == "all" & 
+                                DatosCompletosMoMo$fecha_defuncion > "2019-12-31", 
+                                c(9:10, 13:15)]
+colnames(DatosMoMo) <- c("Fecha", "DefObs", "DefEsp", "DefEsp_q01", "DefEsp_q99")
+DatosMoMo <- as.data.table(DatosMoMo)
+## Adecuación formato fechas para su correcta lectura
+DatosMoMo$Fecha <- as.Date(DatosMoMo$Fecha, format = "%Y-%m-%d")
+```
+
+La fecha y hora de descarga de los datos de mortalidad utilizados para la elaboración de los siguientes gráficos y tablas fue (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "data.csv"))`**
+ 
+Representemos en primer lugar la evolución del número de defunciones en comparación con las esperadas y su rango para los percentiles 1 y 99:
+
+```{r Gráfico mortalidad 2020}
+g <- ggplot(DatosMoMo, aes(Fecha))
+g <- g + labs(y = "Defunciones")
+g <- g + scale_color_manual(name = "Defunciones", 
+                            values = c("Observadas"="black", "Esperadas"="blue"))
+g <- g + geom_ribbon(aes(ymin=DefEsp_q01, ymax=DefEsp_q99), alpha=0.25, fill="blue")
+g <- g + geom_line(aes(y=DefObs, color="Observadas"))
+g <- g + geom_line(aes(y=DefEsp, color="Esperadas"))
+## g <- g + theme(legend.justification = "center", legend.position = "right")
+g
+```
+
+Como se puede ver, existe un periodo de mortalidad totalmente disparada a lo largo de los meses de marzo a mayo, mientras que luego se aprecia otro periodo de desviación al alza, no tan acusado pero más prolongado en el tiempo y con una tendencia creciente, que cubríría desde agosto hasta bien avanzado octubre.
+
+Técnicamente se define "periodo de exceso de mortalidad" cuando se cumplen las siguientes condiciones:
+
+* Se observa al menos dos días consecutivos con defunciones observadas por encima del percentil 99 de las estimadas.
+* La fecha de inicio del periodo es el primer día con las defunciones observadas por encima de las estimadas.
+* La fecha de fin del periodo es el último día con las defunciones observadas por encima de las estimadas.
+* Si entre la fecha de fin de un periodo y la fecha de inicio del siguiente hay dos días, se unifican ambos periodos, tomando la fecha de inicio del primer periodo y fecha de fin del último.
+
+Con estas premisas podemos aislar los periodos en los que se han producido dichas circunstancias y calcular el exceso de defunciones durante esos lapsos de tiempo concretos. Ahora bien, antes de pasar a realizar dichos cálculos, realicemos uno más básico, comparando directamente las cifras de defunciones esperadas acumuladas a lo largo del año con las que realmente se han registrado:
+
+```{r Defunciones acumuladas - esperadas y observadas}
+DatosMoMo[,AcumObs := cumsum(DefObs)]
+DatosMoMo[,AcumEsp := cumsum(DefEsp)]
+g <- ggplot(DatosMoMo, aes(Fecha))
+g <- g + labs(y = "Defunciones Acumuladas a Origen de Año")
+g <- g + scale_color_manual(name = "Defunciones acumuladas", 
+                            values = c("Observadas"="black", "Esperadas"="blue"))
+g <- g + geom_line(aes(y=AcumObs, color="Observadas"))
+g <- g + geom_line(aes(y=AcumEsp, color="Esperadas"))
+## g <- g + theme(legend.justification = "center", legend.position = "right")
+g
+```
+
+Como podíamnos esperar, esta gráfica no aporta gran valor a la hora de la interpretación de la información, más allá del hecho de que las defunciones observadas se despegan  de las esperadas de forma muy visible a lo largo de los meses de marzo a mayo, y que dicho distanciamento se vuelve a incrementar, ya a menor ritmo, a partir del mes de agosto, aunque vuelve a repuntar en noviembre.
+
+```{r Cifras relevantes defunciones}
+## Acumulados totales desde inicio de 2020
+TotalDefAcumObs <- last(DatosMoMo$AcumObs)
+TotalDefAcumEsp <- round(last(DatosMoMo$AcumEsp))
+TotalExcesoDef <- TotalDefAcumObs - TotalDefAcumEsp
+PorcentajeExcesoDef <- round(TotalExcesoDef/TotalDefAcumEsp*100, 1)
+## Acumulados desde inicio de 2020 hasta 21 de junio de 2020
+DefAcumObs21jun <- DatosMoMo$AcumObs[DatosMoMo$Fecha == "2020-06-21"]
+DefAcumEsp21jun <- round(DatosMoMo$AcumEsp[DatosMoMo$Fecha == "2020-06-21"])
+ExcesoDef21jun <- DefAcumObs21jun - DefAcumEsp21jun
+PorcentExcesoDef21jun <- round(ExcesoDef21jun/DefAcumEsp21jun*100, 1)
+```
+
+Más interesentante resulta la comparación directa de las cifras acumuladas hasta la fecha. En este caso tenemos, con los datos disponibles, una total de **`r format(TotalDefAcumObs, big.mark = ".", decimal.mark = ",")`** defunciones observadas y **`r format(TotalDefAcumEsp, big.mark = ".", decimal.mark = ",")`** defunciones esperadas, resultando un exceso de **`r format(TotalExcesoDef, big.mark = ".", decimal.mark = ",")`** defunciones. Expresando dicho exceso en términos porcentuales, nos encontramos con un **`r format(PorcentajeExcesoDef, decimal.mark = ",")` %** más fallecimientos de los esperados.
+
+Por afán de completar la visión de la evolución de estas variables, presentamos a continuación esos mismos valores en la fecha en la que se levantó el estado de alarma, 21 de junio de 2020, buscando una fecha en lo que podríamos denominar **"final de la primera ola"**, que no ***"la derrota de la pandemia"*** (sic):
+
+* Defunciones acumuladas observadas: **`r format(DefAcumObs21jun, big.mark = ".", decimal.mark = ",")`** personas
+* Defunciones acumuladas esperadas: **`r format(DefAcumEsp21jun, big.mark = ".", decimal.mark = ",")`** personas
+* Esceso de defunciones: **`r format(ExcesoDef21jun, big.mark = ".", decimal.mark = ",")`** personas
+* En tanto por ciento: **`r format(PorcentExcesoDef21jun, decimal.mark = ",")` %**  
+
+Retomando la senda de la ortodoxia y aplicando ahora sí los criterios técnicos "oficiales" que presentábamos más arriba que definen los periodos de exceso de mortalidad, las fechas que delimitan el principio y final de los periodos de exceso padecidos a lo largo de 2020 son:
+
+```{r Fechas delimitación periodos exceso}
+## Columnas auxiliares variables buleanas
+DatosMoMo[, MQEsp := DefObs>DefEsp]
+DatosMoMo[, MQEsp99_2dias := {DefObs>DefEsp_q99 & lag(DefObs)>lag(DefEsp_q99)}]
+## Determinar inicio y fin de periodos de exceso
+PeriodosExceso <- data.table("Inicio"=as.Date(character()), "Fin"=as.Date(character()))
+i <- as.integer(1)
+while (i < nrow(DatosMoMo)) { ## Recorrer tabla
+        if (DatosMoMo$MQEsp99_2dias[i] == TRUE) { ## Encontrar dos días > quant99(Esp)
+                j <- as.integer(1)
+                while (DatosMoMo$MQEsp[i-j] == TRUE && DatosMoMo$MQEsp[i-j-1] == TRUE)
+                {j <- j + 1}
+                PeriodosExcesoInicioN <- as.Date(DatosMoMo$Fecha[i-j])
+                for (k in 0:(nrow(DatosMoMo)-i)) {
+                        if (i + k == nrow(DatosMoMo)) {
+                                PeriodosExcesoFinN <- as.Date(DatosMoMo$Fecha[i+k])
+                                PeriodosExceso <- add_row(PeriodosExceso, 
+                                                          Inicio = PeriodosExcesoInicioN,
+                                                          Fin = PeriodosExcesoFinN)
+                                break
+                        }
+                        if (DatosMoMo$MQEsp[i+k] == TRUE && 
+                                DatosMoMo$MQEsp[i+k+1] == FALSE) {
+                                PeriodosExcesoFinN <- as.Date(DatosMoMo$Fecha[i+k])
+                                PeriodosExceso <- add_row(PeriodosExceso, 
+                                                          Inicio = PeriodosExcesoInicioN,
+                                                          Fin = PeriodosExcesoFinN)
+                                i <- i + k
+                                break
+                        }
+                }
+        }
+        i <- i + 1
+}
+## Unir periodos de exceso próximos
+PeriodosExcesoUnido <- data.table("Inicio"=as.Date(character()), "Fin"=as.Date(character()))
+n <- as.integer(1)
+while (n <= nrow(PeriodosExceso)) {
+        PeriodosExcesoUnidoInicioN <- PeriodosExceso$Inicio[n]
+        while (((PeriodosExceso$Inicio[n+1] - PeriodosExceso$Fin[n]) <= 2) &
+               n < nrow(PeriodosExceso)) {n <- n + 1}
+        PeriodosExcesoUnidoFinN <- PeriodosExceso$Fin[n]
+        PeriodosExcesoUnido <- add_row(PeriodosExcesoUnido, 
+                                       Inicio = PeriodosExcesoUnidoInicioN, 
+                                       Fin = PeriodosExcesoUnidoFinN)
+        n <- n + 1
+}
+```
+
+* Antes de unificar periodos de exceso próximos:
+
+`r kable(PeriodosExceso, align = "c")`
+
+* Después de unificar los periodos de exceso cercanos (<= 2 días):
+
+`r kable(PeriodosExcesoUnido, align = "c")`
+
+```{r Determinación de los excesos de defunciones en los periodos}
+## Excesos de defunciones durante los periodos de exceso
+PeriodoExcesoN <- as.Date(character())
+ExcesoDefunciones <- data.table("Exceso"=integer())
+for (i in 1:nrow(PeriodosExcesoUnido)) {
+        PeriodoExcesoN <- seq.Date(
+                from = as.Date(PeriodosExcesoUnido$Inicio[i]), 
+                to = as.Date(PeriodosExcesoUnido$Fin[i]), 
+                by = "day")
+        DatosMoMoPeriodoN <- subset(DatosMoMo, Fecha %in% PeriodoExcesoN)
+        ExcesoDefunciones <- add_row(ExcesoDefunciones, Exceso = 
+                                     (sum(DatosMoMoPeriodoN$DefObs)
+                                     -round(sum(DatosMoMoPeriodoN$DefEsp))))
+}
+PeriodosExcesoUnido <- add_column(PeriodosExcesoUnido, "Exceso de defunciones" = 
+                                          ExcesoDefunciones$Exceso)
+TotalExcesoDefunciones <- sum(PeriodosExcesoUnido$"Exceso de defunciones")
+```
+
+Los excesos de defunciones en estos `r nrow(PeriodosExcesoUnido)` periodos son:
+
+`r kable(PeriodosExcesoUnido, align = "c", format.args = list(big.mark=".", decimal.mark=","))`
+
+Siendo el total agregado de exceso de defunciones de **`r format(TotalExcesoDefunciones, big.mark = ".", decimal.mark = ",")`** personas.
+
+Expresándolo en términos porcentuales, el exceso de defunciones es un **`r format(round((TotalExcesoDefunciones / TotalDefAcumEsp*100), 1), decimal.mark = ",")` %** superior al total de las esperadas hasta la fecha. Como es lógico, este valor porcentual se irá reduciendo a medida que transcurra el tiempo desde el final del último episodio de exceso de defunciones.
+
+Aunque en el exceso de defunciones haya casos de fallecimiento no directamente imputables a la COVID-19, hay que asignar dichas muertes a la crisis del COVID-19. Si determinadas patologías no son debidamente atendidas en tiempo y forma por la sobrecarga del sistema sanitario provocado por la pandemia, los fallecimientos asociados a las mismas son por tanto atribuibles a la COVID-19 aunque el virus no haya tenido presencia en el paciente correspondiente.
+
+No podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior ya que el propio estado de alarma tuvo por necesidad incidencia negativa en el número de fallecimientos por accidente laboral y por accidente de tráfico, teniendo que rebajarse por tanto el patrón de referencia de defunciones durante el estado de confinamiento y arrojando un exceso de defunciones por causa de la COVID-19 superiores a los mostrados más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
+
 ....................
 
+## Referencias
 
 (1) R Core Team (2020). R: A language and environment for statistical computing.
     R Foundation for Statistical Computing, Vienna, Austria. URL: 
@@ -361,3 +537,6 @@ g
 
 (4) Wickham et al., (2019). Welcome to the tidyverse. Journal of Open
     Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
+    
+(5) Matt Dowle and Arun Srinivasan (2020). data.table: Extension of `data.frame`. 
+    R package version 1.13.2. https://CRAN.R-project.org/package=data.table
