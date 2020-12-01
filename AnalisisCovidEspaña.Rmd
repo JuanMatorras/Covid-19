@@ -469,7 +469,8 @@ while (i < nrow(DatosMoMo)) { ## Recorrer tabla
         i <- i + 1
 }
 ## Unir periodos de exceso próximos
-PeriodosExcesoUnido <- data.table("Inicio"=as.Date(character()), "Fin"=as.Date(character()))
+PeriodosExcesoUnido <- data.table("Inicio"=as.Date(character()), 
+                                  "Fin"=as.Date(character()))
 n <- as.integer(1)
 while (n <= nrow(PeriodosExceso)) {
         PeriodosExcesoUnidoInicioN <- PeriodosExceso$Inicio[n]
@@ -495,15 +496,18 @@ while (n <= nrow(PeriodosExceso)) {
 ## Excesos de defunciones durante los periodos de exceso
 PeriodoExcesoN <- as.Date(character())
 ExcesoDefunciones <- data.table("Exceso"=integer())
+DefuncionesEsperadas <- data.table("Esperadas"=integer())
 for (i in 1:nrow(PeriodosExcesoUnido)) {
         PeriodoExcesoN <- seq.Date(
                 from = as.Date(PeriodosExcesoUnido$Inicio[i]), 
                 to = as.Date(PeriodosExcesoUnido$Fin[i]), 
                 by = "day")
         DatosMoMoPeriodoN <- subset(DatosMoMo, Fecha %in% PeriodoExcesoN)
-        ExcesoDefunciones <- add_row(ExcesoDefunciones, Exceso = 
+        ExcesoDefunciones <- add_row(ExcesoDefunciones, "Exceso" = 
                                      (sum(DatosMoMoPeriodoN$DefObs)
                                      -round(sum(DatosMoMoPeriodoN$DefEsp))))
+        DefuncionesEsperadas <- add_row(DefuncionesEsperadas, "Esperadas"=
+                                     round(sum(DatosMoMoPeriodoN$DefEsp)))
 }
 PeriodosExcesoUnido <- add_column(PeriodosExcesoUnido, "Exceso de defunciones" = 
                                           ExcesoDefunciones$Exceso)
@@ -516,11 +520,19 @@ Los excesos de defunciones en estos `r nrow(PeriodosExcesoUnido)` periodos son:
 
 Siendo el total agregado de exceso de defunciones de **`r format(TotalExcesoDefunciones, big.mark = ".", decimal.mark = ",")`** personas.
 
-Expresándolo en términos porcentuales, el exceso de defunciones es un **`r format(round((TotalExcesoDefunciones / TotalDefAcumEsp*100), 1), decimal.mark = ",")` %** superior al total de las esperadas hasta la fecha. Como es lógico, este valor porcentual se irá reduciendo a medida que transcurra el tiempo desde el final del último episodio de exceso de defunciones.
+Expresándolo en términos porcentuales, el exceso de defunciones es un **`r format(round((TotalExcesoDefunciones / TotalDefAcumEsp*100), 1), decimal.mark = ",")` %** superior al total de las esperadas hasta la fecha. Como es lógico, este valor porcentual se irá reduciendo a medida que transcurra el tiempo desde el final del último episodio de exceso de defunciones. Para eliminar esta dependencia temporal, veamos estos excesos en términos porcentulaes circunscritos exclusivamente al propio periodo de exceso de defunciones:
+
+```{r Porcentaje Exceso defunciones en periodos de exceso}
+PeriodosExcesoUnido <- add_column(PeriodosExcesoUnido, "Porcentaje de exceso" = 
+                                  round((PeriodosExcesoUnido$"Exceso de defunciones" /
+                                  DefuncionesEsperadas$"Esperadas" * 100), 1))
+```
+
+`r kable(PeriodosExcesoUnido, align = "c", format.args = list(big.mark=".", decimal.mark=","))`
 
 Aunque en el exceso de defunciones haya casos de fallecimiento no directamente imputables a la COVID-19, hay que asignar dichas muertes a la crisis del COVID-19. Si determinadas patologías no son debidamente atendidas en tiempo y forma por la sobrecarga del sistema sanitario provocado por la pandemia, los fallecimientos asociados a las mismas son por tanto atribuibles a la COVID-19 aunque el virus no haya tenido presencia en el paciente correspondiente.
 
-No podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior ya que el propio estado de alarma tuvo por necesidad incidencia negativa en el número de fallecimientos por accidente laboral y por accidente de tráfico, teniendo que rebajarse por tanto el patrón de referencia de defunciones durante el estado de confinamiento y arrojando un exceso de defunciones por causa de la COVID-19 superiores a los mostrados más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
+No podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadisticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentmente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
 
 ....................
 
