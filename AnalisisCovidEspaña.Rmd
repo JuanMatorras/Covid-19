@@ -23,7 +23,7 @@ Este es un ejercicio básico de análisis de los datos de la incidencia de la CO
 
 Los datos de partida son los publicados por el Gobierno de España en la web **datos.gob.es** a través del siguiente enlace: <https://datos.gob.es/es/catalogo/e05070101-evolucion-de-enfermedad-por-el-coronavirus-covid-19>.
 
-El grueso del informe se centra sobre los totales en España agregando los datos disponibles por Comunidades Autónomas, aunque también se muestran información de las CCAA de Madrid y Cantabria. La razón de la selección de estas dos comunidades y no otras es simple y llanamente que nací y crecí en la última, mantenniendo allí vínculos familiares y de amistad, mientras que en la primera he pasado prácticamente la mitad de mi vida, sigo viviendo en ella y previsiblemente así seguirá siendo en los próximos años.
+El grueso del informe se centra sobre los totales en España agregando los datos disponibles por Comunidades Autónomas, aunque también se muestran información de la incidencia en las CCAA de Madrid, Cantabria, Asturias y Galicia. La razón de la selección de estas comunidades y no otras responde a consideraciones personales y no obedece a ningún criterio técnico.
 
 ## Proceso metodológico y software utilizado
 
@@ -269,82 +269,103 @@ g <- g + geom_step(aes(y=IA7, color="7 días"))
 g
 ```
 
-## Comparación de la evolución del número de casos entre Cantabria y Madrid
+## Comparación de la evolución del número de casos entre Madrid y otras CCAA
 
-En el siguiente gráfico se compara la evolución de la enfermedad entre dos comunidades muy diferentes, Cantabria y la Comunidad Autónoma de Madrid:
+En el siguiente gráfico se compara la evolución de la enfermedad entre comunidades muy diferentes, la Comunidad Autónoma de Madrid, Cantabria, Asturias y Galicia:
 
-```{r Casos reportados en Cantabria y Madrid}
-## ISO CCAA: Cantabria = CB, Madrid = MD
-CasosDiariosCantabria <- filter(DatosCCAAs, ccaa_iso == "CB")
-CasosDiariosCantabria <- subset (CasosDiariosCantabria, select = -ccaa_iso)
-colnames(CasosDiariosCantabria) <- c("Fecha", "Casos")
-CasosDiariosMadrid <- filter(DatosCCAAs, ccaa_iso == "MD")
-CasosDiariosMadrid <- subset (CasosDiariosMadrid, select = -ccaa_iso)
-colnames(CasosDiariosMadrid) <- c("Fecha", "Casos")
-CasosCantabriaMadrid <- add_column(CasosDiariosCantabria, CasosDiariosMadrid$Casos)
-colnames(CasosCantabriaMadrid) <- c("Fecha", "CasosCANT", "CasosMAD")
-g <- ggplot(CasosCantabriaMadrid, aes(Fecha)) + labs(y = "Casos reportados")
-g <- g + scale_fill_manual(name="Nº de casos", 
-                           values = c("Madrid" = "blue", "Cantabria" = "red"))
-g <- g + geom_col(aes(y=CasosMAD, fill="Madrid"))
-g <- g + geom_col(aes(y=CasosCANT, fill="Cantabria"))
+```{r Casos reportados en Madrid, Cantabria, Asturias y Galicia}
+## ISO CCAA: Madrid = MD, Cantabria = CB, Asturias = AS, Galicia = GA
+CasosDiariosMD <- filter(DatosCCAAs, ccaa_iso == "MD")
+CasosDiariosMD <- subset (CasosDiariosMD, select = -ccaa_iso)
+CasosDiariosCB <- filter(DatosCCAAs, ccaa_iso == "CB")
+CasosDiariosCB <- subset (CasosDiariosCB, select = -ccaa_iso)
+CasosDiariosAS <- filter(DatosCCAAs, ccaa_iso == "AS")
+CasosDiariosAS <- subset (CasosDiariosAS, select = -ccaa_iso)
+CasosDiariosGA <- filter(DatosCCAAs, ccaa_iso == "GA")
+CasosDiariosGA <- subset (CasosDiariosGA, select = -ccaa_iso)
+CasosDiariosCCAA <- add_column(CasosDiariosMD, CasosDiariosCB$num_casos, 
+                               CasosDiariosAS$num_casos, CasosDiariosGA$num_casos)
+colnames(CasosDiariosCCAA) <- c("Fecha", "CasosMD", "CasosCB", "CasosAS", "CasosGA")
+g <- ggplot(CasosDiariosCCAA, aes(Fecha)) + labs(y = "Casos reportados")
+g <- g + scale_color_manual(name="Nº de casos", 
+                           values = c("Madrid"="blue", "Cantabria"="red", 
+                                      "Asturias"="green", "Galicia"="orange"))
+g <- g + geom_step(aes(y=CasosMD, color="Madrid"))
+g <- g + geom_step(aes(y=CasosCB, color="Cantabria"))
+g <- g + geom_step(aes(y=CasosAS, color="Asturias"))
+g <- g + geom_step(aes(y=CasosGA, color="Galicia"))
 g
 ```
 
-Como es lógico, los datos no son comparables en términos absolutos por la gran diferencia de población entre ambas comunidades autónomas, por no entrar en la forma de vida en una y otra y en cómo eso impacta en la dispersión de la enfermedad. 
+Como es lógico, los datos no son comparables en términos absolutos por la gran diferencia de población entre estas comunidades autónomas, por no entrar en la forma de vida en unas y otras, aunque sí que haya similitudes entre las de la cornisa cantábrica, y en cómo esto impacta en la dispersión de la enfermedad. 
 
-Para solventar este problmea reprentamos ahora número de casos por cada 100.000 habitantes, con los datos de población en cada comunidad disponibles en el momento en el INE, que corresponden a 2019, reflejando los datos de Cantabria en color rojo y los de Madrid en azul:
+Para solventar este problema representamos ahora número de casos por cada 100.000 habitantes, con los datos de población en cada comunidad disponibles en el momento en el INE  (<https://www.ine.es/dynInfo/Infografia/Territoriales/capitulo.html#!tabla>):
 
 ```{r Casos en Cantabria y Madrid por cada 100.000 habitantes}
-poblMAD <- 6.663E+06
-poblCANT <- 581E+03
-IncidenciaCantabriaMadrid <- data.frame(CasosCantabriaMadrid$Fecha, 
-                                        CasosDiariosCantabria$Casos/poblCANT*1E+05, 
-                                        CasosDiariosMadrid$Casos/poblMAD*1E+05)
-colnames(IncidenciaCantabriaMadrid) <- c("Fecha", "IncidCANT", "IncidMAD")
-g <- ggplot(IncidenciaCantabriaMadrid, aes(Fecha)) + 
+poblMD <- 6.778E+06
+poblCB <- 0.583E+06
+poblAS <- 1.019E+06
+poblGA <- 2.700E+06
+IncidenciaCCAA <- data.frame(CasosDiariosCCAA$Fecha, 
+                             CasosDiariosMD$num_casos/poblMD*1E+05, 
+                             CasosDiariosCB$num_casos/poblCB*1E+05, 
+                             CasosDiariosAS$num_casos/poblAS*1E+05, 
+                             CasosDiariosGA$num_casos/poblGA*1E+05)
+colnames(IncidenciaCCAA) <- c("Fecha", "IncidMD", "IncidCB", "IncidAS", "IncidGA")
+g <- ggplot(IncidenciaCCAA, aes(Fecha)) + 
         labs(y = "Incidencia (Casos / 100.000 hab.)")
 g <- g + scale_color_manual(name="Incidencia/100.000", 
-                            values = c("Madrid" = "blue", "Cantabria" = "red"))
-g <- g + geom_step(aes(y=IncidMAD, colour="Madrid"))
-g <- g + geom_step(aes(y=IncidCANT, colour="Cantabria"))
+                           values = c("Madrid"="blue", "Cantabria"="red", 
+                                      "Asturias"="green", "Galicia"="orange"))
+g <- g + geom_step(aes(y=IncidMD, color="Madrid"))
+g <- g + geom_step(aes(y=IncidCB, color="Cantabria"))
+g <- g + geom_step(aes(y=IncidAS, color="Asturias"))
+g <- g + geom_step(aes(y=IncidGA, color="Galicia"))
 ## g <- g + theme(legend.justification = "center", legend.position = "right")
 g
 ```
 
-Por completar la información comparativa entre ambas comunidades se adjunta también la incidencia acumulada en 14 días para ambas áreas geográficas, junto con la correspondiente al conjunto del territorio nacional:
+Por completar la información comparativa entre estas comunidades se adjunta también la incidencia acumulada en 14 días para estas áreas geográficas, junto con la correspondiente al conjunto del territorio nacional:
 
-```{r Incidencias acumuladas 14 días Cantabria y Madrid + España}
+```{r Incidencias acumuladas 14 días CCAA + España}
 InicioPeriodo14 <- as.Date("2020-01-01")
 FinPeriodo14 <- InicioPeriodo14 + 13
-IA14_CantabriaMadrid <- data.frame(Fecha=as.Date(character()), IA14_CANT=integer(), 
-                                   IA14_MAD=integer()) 
+IA14_CCAA <- data.frame(Fecha=as.Date(character()), IA14_MD=integer(), 
+                        IA14_CB=integer(), IA14_AS=integer(), IA14_GA=integer()) 
 IA14aux <- as.integer()
 while (FinPeriodo14 <= UltFecha) {
-        IA14auxCANT <- 0
-        IA14auxMAD <- 0
+        IA14auxMD <- 0
+        IA14auxCB <- 0
+        IA14auxAS <- 0
+        IA14auxGA <- 0
         Periodo14 <- seq.Date(
                 from = InicioPeriodo14,
                 to = FinPeriodo14,
                 by = "day")
-        DatosIA14_CantMad <- subset(IncidenciaCantabriaMadrid, Fecha %in% Periodo14)
-        IA14auxCANT <- round(sum(DatosIA14_CantMad$IncidCANT), digits = 0)
-        IA14auxMAD <- round(sum(DatosIA14_CantMad$IncidMAD), digits = 0)
-        IA14_CantabriaMadrid <- add_row(IA14_CantabriaMadrid, Fecha = FinPeriodo14, 
-                                        IA14_CANT = IA14auxCANT, IA14_MAD = IA14auxMAD)
+        DatosIA14_CCAA <- subset(IncidenciaCCAA, Fecha %in% Periodo14)
+        IA14auxMD <- round(sum(DatosIA14_CCAA$IncidMD), digits = 0)
+        IA14auxCB <- round(sum(DatosIA14_CCAA$IncidCB), digits = 0)
+        IA14auxAS <- round(sum(DatosIA14_CCAA$IncidAS), digits = 0)
+        IA14auxGA <- round(sum(DatosIA14_CCAA$IncidGA), digits = 0)
+        IA14_CCAA <- add_row(IA14_CCAA, Fecha = FinPeriodo14, IA14_MD = IA14auxMD, 
+                             IA14_CB = IA14auxCB, IA14_AS = IA14auxAS, 
+                             IA14_GA = IA14auxGA)
         InicioPeriodo14 <- InicioPeriodo14 + 1
         FinPeriodo14 <- FinPeriodo14 + 1
 }
 ## Añadiendo columna con valores a nivel nacional
-IA14_CantMadNac <- add_column(IA14_CantabriaMadrid, IA14_Nacional=IncidAcum14$IA14)
+IA14_CCAANac <- add_column(IA14_CCAA, IA14_Nacional=IncidAcum14$IA14)
 ## Gráfico
-g <- ggplot(IA14_CantMadNac, aes(Fecha))
+g <- ggplot(IA14_CCAANac, aes(Fecha))
 g <- g + labs(y = "Incidencia acumulada 14 días / 100.000 hab.")
 g <- g + scale_color_manual(name = "IA14d/100.000", 
-                            values = c("Madrid" = "blue", "Cantabria" = 
-                                               "red", "Nacional" = "black"))
-g <- g + geom_step(aes(y=IA14_MAD, color="Madrid"))
-g <- g + geom_step(aes(y=IA14_CANT, color="Cantabria"))
+                            values = c("Madrid"="blue", "Cantabria"="red", 
+                                       "Asturias"="green", "Galicia"="orange", 
+                                       "Nacional" = "black"))
+g <- g + geom_step(aes(y=IA14_MD, color="Madrid"))
+g <- g + geom_step(aes(y=IA14_CB, color="Cantabria"))
+g <- g + geom_step(aes(y=IA14_AS, color="Asturias"))
+g <- g + geom_step(aes(y=IA14_GA, color="Galicia"))
 g <- g + geom_step(aes(y=IA14_Nacional, color="Nacional"))
 ## g <- g + theme(legend.justification = "center", legend.position = "right")
 g
@@ -384,7 +405,7 @@ g <- g + geom_line(aes(y=DefEsp, color="Esperadas"))
 g
 ```
 
-Como se puede ver, existe un periodo de mortalidad totalmente disparada a lo largo de los meses de marzo a mayo, mientras que luego se aprecia otro periodo de desviación al alza, no tan acusado pero más prolongado en el tiempo y con una tendencia creciente, que cubríría desde agosto hasta bien avanzado octubre.
+Como se puede ver, existe un periodo de mortalidad totalmente disparada a lo largo de los meses de marzo a mayo, con una punta con valores cercanos al triple de lo esperado, mientras que luego se aprecia otro periodo de desviación al alza, no tan acusado pero más prolongado en el tiempo y con una tendencia creciente, que cubríría desde agosto hasta bien avanzado noviembre.
 
 Técnicamente se define "periodo de exceso de mortalidad" cuando se cumplen las siguientes condiciones:
 
@@ -408,7 +429,7 @@ g <- g + geom_line(aes(y=AcumEsp, color="Esperadas"))
 g
 ```
 
-Como podíamnos esperar, esta gráfica no aporta gran valor a la hora de la interpretación de la información, más allá del hecho de que las defunciones observadas se despegan  de las esperadas de forma muy visible a lo largo de los meses de marzo a mayo, y que dicho distanciamento se vuelve a incrementar, ya a menor ritmo, a partir del mes de agosto, aunque vuelve a repuntar en noviembre.
+Como podíamnos esperar, esta gráfica no aporta gran valor a la hora de la interpretación de la información, más allá del hecho de que las defunciones observadas se distancian de las esperadas de forma muy visible a lo largo de los meses de marzo a mayo, y que dicho distanciamento se vuelve a incrementar, ya a menor ritmo, a partir del mes de agosto, aunque se aprecia que vuelve a repuntar ligeramente en noviembre.
 
 ```{r Cifras relevantes defunciones}
 ## Acumulados totales desde inicio de 2020
@@ -432,7 +453,7 @@ Por afán de completar la visión de la evolución de estas variables, presentam
 * Esceso de defunciones: **`r format(ExcesoDef21jun, big.mark = ".", decimal.mark = ",")`** personas
 * En tanto por ciento: **`r format(PorcentExcesoDef21jun, decimal.mark = ",")` %**  
 
-Retomando la senda de la ortodoxia y aplicando ahora sí los criterios técnicos "oficiales" que presentábamos más arriba que definen los periodos de exceso de mortalidad, las fechas que delimitan el principio y final de los periodos de exceso padecidos a lo largo de 2020 son:
+Retomando la senda de la ortodoxia y aplicando ahora sí los criterios técnicos "oficiales" que presentábamos más arriba que definen los periodos de exceso de mortalidad, las fechas que delimitan el principio y final de los periodos de exceso padecidos a lo largo de 2020 son (fechas en formato aaaa-mm-dd):
 
 ```{r Fechas delimitación periodos exceso}
 ## Columnas auxiliares variables buleanas
@@ -520,19 +541,139 @@ Los excesos de defunciones en estos `r nrow(PeriodosExcesoUnido)` periodos son:
 
 Siendo el total agregado de exceso de defunciones de **`r format(TotalExcesoDefunciones, big.mark = ".", decimal.mark = ",")`** personas.
 
-Expresándolo en términos porcentuales, el exceso de defunciones es un **`r format(round((TotalExcesoDefunciones / TotalDefAcumEsp*100), 1), decimal.mark = ",")` %** superior al total de las esperadas hasta la fecha. Como es lógico, este valor porcentual se irá reduciendo a medida que transcurra el tiempo desde el final del último episodio de exceso de defunciones. Para eliminar esta dependencia temporal, veamos estos excesos en términos porcentulaes circunscritos exclusivamente al propio periodo de exceso de defunciones:
+Expresándolo en términos porcentuales, el exceso de defunciones es un **`r format(round((TotalExcesoDefunciones / TotalDefAcumEsp*100), 1), decimal.mark = ",")` %** superior al total de las esperadas hasta la fecha. Como es lógico, este valor porcentual se irá reduciendo a medida que transcurra el tiempo desde el final del último episodio de exceso de defunciones.
+
+Para eliminar esta dependencia temporal, veamos estos excesos en términos porcentuales con respecto a las esperadas, pero  circunscritos exclusivamente al propio periodo de exceso de defunciones y dejando fuera el resto de la serie temporal:
 
 ```{r Porcentaje Exceso defunciones en periodos de exceso}
 PeriodosExcesoUnido <- add_column(PeriodosExcesoUnido, "Porcentaje de exceso" = 
                                   round((PeriodosExcesoUnido$"Exceso de defunciones" /
-                                  DefuncionesEsperadas$"Esperadas" * 100), 1))
+                                  DefuncionesEsperadas$Esperadas * 100), 1))
 ```
 
 `r kable(PeriodosExcesoUnido, align = "c", format.args = list(big.mark=".", decimal.mark=","))`
 
-Aunque en el exceso de defunciones haya casos de fallecimiento no directamente imputables a la COVID-19, hay que asignar dichas muertes a la crisis del COVID-19. Si determinadas patologías no son debidamente atendidas en tiempo y forma por la sobrecarga del sistema sanitario provocado por la pandemia, los fallecimientos asociados a las mismas son por tanto atribuibles a la COVID-19 aunque el virus no haya tenido presencia en el paciente correspondiente.
+Aunque en el exceso de defunciones haya casos de fallecimiento no directamente imputables a la COVID-19, hay que asignar dichas muertes a la crisis del COVID-19. Si determinadas patologías no son debidamente atendidas en tiempo y forma por la sobrecarga del sistema sanitario provocado por la pandemia, los fallecimientos asociados a las mismas son por tanto atribuibles a la COVID-19 aunque el virus no haya sido la causa directa del fallecimiento correspondiente.
 
-No podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadisticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentmente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
+El índice de mortalidad de la COVID-19 en España en 2020, medido como exceso de mortalidad atribuible directa o indrectamente a la COVID por cada mil habitantes, es de **`r format(TotalExcesoDefunciones/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**.
+
+Para tener algo con lo que comparar, el índice de mortalidad observado por todas las causas, en lo que va de año de 2020, es de **`r format(TotalDefAcumObs/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**, mientras que el esperado a estas alturas de año sería de **`r format(TotalDefAcumEsp/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**, en ambos casos también por cada mil habitantes.
+
+Antes de seguir avanzando no podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadisticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentmente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
+
+## Análisis por grupos de edad y sexo de las defunciones ocurridas durante la primera ola de la pandemia
+
+En este apartado haremos una somera disección de los fallecimientos producidos durante la primera ola de la pandemia por grupos de edad y por sexo. Tomaremos como periodo de referencia para el análisis de datos el correspondiente al primer periodo de exceso de defunciones tal y como se definió y determinó más arriba.
+
+En resumen, los datos que se presentan ahora corresponden al periodo entre el **`r format(PeriodosExcesoUnido[1,1], "%d de %B de %Y")`** y el **`r format(PeriodosExcesoUnido[1,2], "%d de %B de %Y")`**.
+
+En primera instancia nos limitaremos a analizar los datos para el agregado nacional, sin entrar en el detalle de lo acontecido en cada comunidad autónoma.
+
+```{r Análisis por grupos de edad y sexo defunciones en la primera ola}
+PeriodoOla1 <- as.Date(character())
+PeriodoOla1 <- seq.Date(from = as.Date(PeriodosExcesoUnido$Inicio[1]), 
+                           to = as.Date(PeriodosExcesoUnido$Fin[1]), 
+                           by = "day")
+DatosMoMoOla1 <- subset(DatosCompletosMoMo, as.Date(fecha_defuncion) %in% 
+                        PeriodoOla1 & DatosCompletosMoMo$ambito == "nacional", 
+                        select = c(6, 8:10))
+colnames(DatosMoMoOla1) <- c("sexo", "edad", "fecha", "defunciones")
+DatosMoMoOla1 <- as.data.table(DatosMoMoOla1)
+DatosMoMoOla1$fecha <- as.Date(DatosMoMoOla1$fecha, format = "%Y-%m-%d")
+DatosMoMoOla1$sexo <- factor(DatosMoMoOla1$sexo, levels = c("hombres", "mujeres", 
+                                                            "todos"))
+DatosMoMoOla1$edad <- factor(DatosMoMoOla1$edad, levels = c("edad < 65", 
+                                                            "edad 65-74", 
+                                                            "edad > 75", 
+                                                            "todos"))
+TablaOla1 <- xtabs(defunciones ~ sexo + edad, data = DatosMoMoOla1)
+```
+
+`r kable(TablaOla1, align = "r", format.args = list(big.mark=".", decimal.mark=","))`
+
+Nótese que los desgloses por sexo siempre suman una cantidad inferior al total agregado correspondiente. Esto no es un error de programación sino una deficiencia, característica intrínseca por decirlo de una forma eufemística, de los datos de partida, en los que para una fecha dada las sumas por sexos no llegan al "todos" correspondiente, ni en el agregado total ni en los subtotales por franjas de edad.
+
+Ante la disyuntavia de cómo continuar después de detectada esta discordancia, en vez de quedarnos con los números que representan las agregaciones "todos" (fila inferior y columna derecha), daremos por buenos los datos de detalle y calcularemos los nuevos agregados parciales y total.
+
+```{r Simplificación de tabla eliminando grupos "todos" Ola1}
+DatosMoMoOla1 <- DatosMoMoOla1[sexo != "todos",]
+DatosMoMoOla1 <- DatosMoMoOla1[edad != "todos",]
+DatosMoMoOla1$sexo <- factor(DatosMoMoOla1$sexo, levels = c("hombres", "mujeres"))
+DatosMoMoOla1$edad <- factor(DatosMoMoOla1$edad, levels = c("edad < 65", 
+                                                            "edad 65-74", 
+                                                            "edad > 75"))
+TablaOla1 <- addmargins(xtabs(defunciones ~ sexo + edad, data = DatosMoMoOla1))
+TablaOla1Porc <- addmargins(prop.table(xtabs(defunciones ~ sexo + edad, data = 
+                                               DatosMoMoOla1))*100)
+```
+
+La nueva tabla de distribución por sexos y edad queda entonces de la siguiente manera:
+
+Expresándolo en número de defunciones:
+
+`r kable(TablaOla1, align = "r", format.args = list(big.mark=".", decimal.mark=","))`
+
+Representándolo como porcentajes:
+
+`r kable(TablaOla1Porc, align = "r", format.args = list(digits = 3, big.mark=".", decimal.mark=","))`
+
+Sobre esta tabla hay que remarcar el hecho de que estamos obteniendo el total de fallecimientos, con independencia de la causa, no sólo por la COVID-19, con lo cual por sí sola no puede arrojar mucha luz ya que no podemos separar los casos "Covid" de los "no-Covid". Lo que haremos para solventar esta carencia es comparar el reparto porcentual durante la ola con un periodo de referencia. En este caso no nos complicaremos con medias de largos periodos y lo compararemos con la distribución correspondiente al año 2019.
+
+```{r Grupos de edad y sexo en las defunciones de 2019}
+Periodo2019 <- as.Date(character())
+Periodo2019 <- seq.Date(from = as.Date("2019-01-01"), 
+                           to = as.Date("2019-12-31"), 
+                           by = "day")
+DatosMoMo2019 <- subset(DatosCompletosMoMo, as.Date(fecha_defuncion) %in% 
+                        Periodo2019 & DatosCompletosMoMo$ambito == "nacional", 
+                        select = c(6, 8:10))
+colnames(DatosMoMo2019) <- c("sexo", "edad", "fecha", "defunciones")
+DatosMoMo2019 <- as.data.table(DatosMoMo2019)
+DatosMoMo2019$fecha <- as.Date(DatosMoMo2019$fecha, format = "%Y-%m-%d")
+DatosMoMo2019$sexo <- factor(DatosMoMo2019$sexo, levels = c("hombres", "mujeres", 
+                                                            "todos"))
+DatosMoMo2019$edad <- factor(DatosMoMo2019$edad, levels = c("edad < 65", 
+                                                            "edad 65-74", 
+                                                            "edad > 75", 
+                                                            "todos"))
+Tabla2019 <- xtabs(defunciones ~ sexo + edad, data = DatosMoMo2019)
+```
+
+`r kable(Tabla2019, align = "r", format.args = list(big.mark=".", decimal.mark=","))`
+
+Como ya apuntábamos antes, el problema de falta de coherencia entre los grupos "todos" y sus desgloses es inherente a los propios datos y volveremos a depurarlos de la misma manera en esta ocasión, conservando los desgloses y calcuando nuevos subtotales y total agregado:
+
+```{r Simplificación de tabla eliminando grupos "todos" 2019}
+DatosMoMo2019 <- DatosMoMo2019[sexo != "todos",]
+DatosMoMo2019 <- DatosMoMo2019[edad != "todos",]
+DatosMoMo2019$sexo <- factor(DatosMoMo2019$sexo, levels = c("hombres", "mujeres"))
+DatosMoMo2019$edad <- factor(DatosMoMo2019$edad, levels = c("edad < 65", 
+                                                            "edad 65-74", 
+                                                            "edad > 75"))
+Tabla2019 <- addmargins(xtabs(defunciones ~ sexo + edad, data = DatosMoMo2019))
+Tabla2019Porc <- addmargins(prop.table(xtabs(defunciones ~ sexo + edad, data = 
+                                               DatosMoMo2019))*100)
+```
+
+En número de fallecimientos:
+
+`r kable(Tabla2019, align = "r", format.args = list(big.mark=".", decimal.mark=","))`
+
+Como porcentajes:
+
+`r kable(Tabla2019Porc, align = "r", format.args = list(digits = 3, big.mark=".", decimal.mark=","))`
+
+Coloquemos las tablas de porcentajes juntas una con la otra para que sea fácil compararlas:
+
+- Primera ola de la pandemia:
+
+`r kable(TablaOla1Porc, align = "r", format.args = list(digits = 3, big.mark=".", decimal.mark=","))`
+
+- Año 2019:
+
+`r kable(Tabla2019Porc, align = "r", format.args = list(digits = 3, big.mark=".", decimal.mark=","))`
+
+Como se puede ver, con estos datos no es posible afirmar que la COVID-19 en términos de mortalidad haya afectado significativamente más a la población másculina que a la femenina y sólo se puede apreciar un desplazamiento de los fallecimientos hacia las franjas de edad mayores, algo que por otro lado es esperable puesto que la enfermedad afecta más severamente a las personas con patologías previas y éstas se encuentran por lógica entre los grupos de edad más avanzada.
 
 ....................
 
