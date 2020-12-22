@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 ```{r Setup, include=FALSE}
-knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(echo=FALSE, fig.width=12, fig.height=6)
 library(lubridate)
 library(knitr)
 library(tidyverse)
@@ -14,6 +14,7 @@ library(data.table)
 Sys.setlocale("LC_TIME", "es_ES.UTF-8")
 Meses <- c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", 
            "Nov", "Dic")
+ggplotCovid <- function(...){ggplot(...) + theme_bw(base_size=22)}
 poblESP <- 47.33E+06
 ```
 
@@ -68,7 +69,10 @@ PorcentajePoblacion <- paste(format(TotalCasosOrigen / poblESP *100, digits = 4,
 dfCasosMensuales <- data.frame(Mes = head(Meses, length(CasosMensuales)), 
                                Casos =  CasosMensuales)
 dfCasosMensuales$Mes <- factor(dfCasosMensuales$Mes, levels = dfCasosMensuales$Mes)
-d <- ggplot(dfCasosMensuales, aes(Mes, Casos))
+d <- ggplotCovid(dfCasosMensuales, aes(Mes, Casos))
+d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 d + geom_col()
 ```
 
@@ -88,7 +92,10 @@ Considerando una población en España de **`r format(poblESP/1E+06, big.mark = 
 CasosSemanales <- tapply(Datos$num_casos, week(Datos$fecha), sum)
 dfCasosSemanales <- data.frame(Semana = 1:length(CasosSemanales), Casos =  
                                        CasosSemanales)
-d <- ggplot(dfCasosSemanales, aes(Semana, Casos))
+d <- ggplotCovid(dfCasosSemanales, aes(Semana, Casos))
+d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 d + geom_col()
 ```
 
@@ -98,7 +105,10 @@ d + geom_col()
 
 ```{r Incidencia Diaria}
 dfCasosDiarios <- data.frame(Fecha = Datos$fecha, Casos = Datos$num_casos)
-d <- ggplot(dfCasosDiarios, aes(Fecha, Casos))
+d <- ggplotCovid(dfCasosDiarios, aes(Fecha, Casos))
+d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 d + geom_col()
 ```
 
@@ -107,7 +117,10 @@ d + geom_col()
 ```{r Casos acumulados a origen}
 CasosDiariosAcumul <- cumsum(dfCasosDiarios$Casos)
 dfCasosDiariosAcumul <- data.frame(Fecha = Datos$fecha, Casos = CasosDiariosAcumul)
-d <- ggplot(dfCasosDiariosAcumul, aes(Fecha, Casos))
+d <- ggplotCovid(dfCasosDiariosAcumul, aes(Fecha, Casos))
+d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 d + geom_col()
 ```
 
@@ -124,7 +137,10 @@ DatosEF <- subset(Datos, fecha %in% PeriodoEF)
 CasosDiariosEF <- tapply(DatosEF$num_casos, yday(DatosEF$fecha), sum)
 dfCasosDiariosEF <- data.frame(Fecha = 1:length(CasosDiariosEF), Casos =  CasosDiariosEF)
 TotalCasosEF <- sum(DatosEF$num_casos)
-d <- ggplot(dfCasosDiariosEF, aes(Fecha, Casos))
+d <- ggplotCovid(dfCasosDiariosEF, aes(Fecha, Casos))
+d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 d + geom_col()
 ```
 
@@ -184,7 +200,10 @@ Durante los siguientes siete días, del 9 al 15 de marzo, los casos a sumar fuer
 CasosDiariosHasta15mar <- c(CasosDiariosEF, CasosDiarios1_8mar, CasosDiarios9_15mar)
 dfCasosDiariosHasta15mar <- data.frame(Fecha = 1:length(CasosDiariosHasta15mar), Casos = 
                                                CasosDiariosHasta15mar)
-d <- ggplot(dfCasosDiariosHasta15mar, aes(Fecha, Casos))
+d <- ggplotCovid(dfCasosDiariosHasta15mar, aes(Fecha, Casos))
+d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 d + geom_col()
 ```
 
@@ -253,17 +272,15 @@ while (FinPeriodo7 <= UltFecha) {
         FinPeriodo7 <- FinPeriodo7 + 1
 }
 
-## Gráficos de Incidencia acumulada por separado
-## d <- ggplot(IncidAcum14, aes(Fecha, IA14)) + labs(y = "Incidencia Acumulada 14 días")
-## d + geom_col()
-## e <- ggplot(IncidAcum7, aes(Fecha, IA7)) + labs(y = "Incidencia Acumulada 7 días")
-## e + geom_col()
-
 ## Gráficos de Incidencia Acumulada superpuestos
-        ## Combinaión de ambos data frames en IncidAcum7_14
+        ## Combinación de ambos data frames en IncidAcum7_14
 IncidAcum7_14 <- add_column(IncidAcum7, IA14=c(rep(0, 7), IncidAcum14$IA14))
                 ## 7 primeros valores deberían ser NA, 0 para evitar aviso
-g <- ggplot(IncidAcum7_14, aes(Fecha)) + labs(y = "Incidencia Acumulada 7/14 días")
+g <- ggplotCovid(IncidAcum7_14, aes(Fecha))
+g <- g + labs(y = "Incidencia Acumulada 7/14 días")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 g <- g + scale_color_manual(name="Inc.Acum./100.000", 
                            values = c("14 días" = "blue", "7 días" = "red"))
 g <- g + geom_step(aes(y=IA14, color="14 días"))
@@ -288,7 +305,10 @@ CasosDiariosGA <- subset (CasosDiariosGA, select = -ccaa_iso)
 CasosDiariosCCAA <- add_column(CasosDiariosMD, CasosDiariosCB$num_casos, 
                                CasosDiariosAS$num_casos, CasosDiariosGA$num_casos)
 colnames(CasosDiariosCCAA) <- c("Fecha", "CasosMD", "CasosCB", "CasosAS", "CasosGA")
-g <- ggplot(CasosDiariosCCAA, aes(Fecha)) + labs(y = "Casos reportados")
+g <- ggplotCovid(CasosDiariosCCAA, aes(Fecha)) + labs(y = "Casos reportados")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 g <- g + scale_color_manual(name="Nº de casos", 
                            values = c("Madrid"="blue", "Cantabria"="red", 
                                       "Asturias"="green", "Galicia"="orange"))
@@ -314,8 +334,11 @@ IncidenciaCCAA <- data.frame(CasosDiariosCCAA$Fecha,
                              CasosDiariosAS$num_casos/poblAS*1E+05, 
                              CasosDiariosGA$num_casos/poblGA*1E+05)
 colnames(IncidenciaCCAA) <- c("Fecha", "IncidMD", "IncidCB", "IncidAS", "IncidGA")
-g <- ggplot(IncidenciaCCAA, aes(Fecha)) + 
-        labs(y = "Incidencia (Casos / 100.000 hab.)")
+g <- ggplotCovid(IncidenciaCCAA, aes(Fecha))
+g <- g + labs(y = "Incidencia (Casos / 100.000 hab.)")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 g <- g + scale_color_manual(name="Incidencia/100.000", 
                            values = c("Madrid"="blue", "Cantabria"="red", 
                                       "Asturias"="green", "Galicia"="orange"))
@@ -358,8 +381,11 @@ while (FinPeriodo14 <= UltFecha) {
 ## Añadiendo columna con valores a nivel nacional
 IA14_CCAANac <- add_column(IA14_CCAA, IA14_Nacional=IncidAcum14$IA14)
 ## Gráfico
-g <- ggplot(IA14_CCAANac, aes(Fecha))
+g <- ggplotCovid(IA14_CCAANac, aes(Fecha))
 g <- g + labs(y = "Incidencia acumulada 14 días / 100.000 hab.")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 g <- g + scale_color_manual(name = "IA14d/100.000", 
                             values = c("Madrid"="blue", "Cantabria"="red", 
                                        "Asturias"="green", "Galicia"="orange", 
@@ -396,8 +422,11 @@ La fecha y hora de descarga de los datos de mortalidad utilizados para la elabor
 Representemos en primer lugar la evolución del número de defunciones en comparación con las esperadas y su rango para los percentiles 1 y 99:
 
 ```{r Gráfico mortalidad 2020}
-g <- ggplot(DatosMoMo, aes(Fecha))
+g <- ggplotCovid(DatosMoMo, aes(Fecha))
 g <- g + labs(y = "Defunciones")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 g <- g + scale_color_manual(name = "Defunciones", 
                             values = c("Observadas"="black", "Esperadas"="blue"))
 g <- g + geom_ribbon(aes(ymin=DefEsp_q01, ymax=DefEsp_q99), alpha=0.25, fill="blue")
@@ -407,7 +436,7 @@ g <- g + geom_line(aes(y=DefEsp, color="Esperadas"))
 g
 ```
 
-Como se puede ver, existe un periodo de mortalidad totalmente disparada a lo largo de los meses de marzo a mayo, con una punta con valores cercanos al triple de lo esperado, mientras que luego se aprecia otro periodo de desviación al alza, no tan acusado pero más prolongado en el tiempo y con una tendencia creciente, que cubríría desde agosto hasta bien avanzado noviembre.
+Como se puede ver, existe un periodo de mortalidad totalmente disparada a lo largo de los meses de marzo a mayo, con una punta con valores cercanos al triple de lo esperado, mientras que luego se aprecia otro periodo de desviación al alza, no tan acusado pero más prolongado en el tiempo y con una tendencia creciente, que cubríría desde agosto llegando hasta diciembre.
 
 Técnicamente se define "periodo de exceso de mortalidad" cuando se cumplen las siguientes condiciones:
 
@@ -421,7 +450,10 @@ Con estas premisas podemos aislar los periodos en los que se han producido dicha
 ```{r Defunciones acumuladas - esperadas y observadas}
 DatosMoMo[,AcumObs := cumsum(DefObs)]
 DatosMoMo[,AcumEsp := cumsum(DefEsp)]
-g <- ggplot(DatosMoMo, aes(Fecha))
+g <- ggplotCovid(DatosMoMo, aes(Fecha))
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
 g <- g + labs(y = "Defunciones Acumuladas a Origen de Año")
 g <- g + scale_color_manual(name = "Defunciones acumuladas", 
                             values = c("Observadas"="black", "Esperadas"="blue"))
@@ -431,7 +463,7 @@ g <- g + geom_line(aes(y=AcumEsp, color="Esperadas"))
 g
 ```
 
-Como podíamnos esperar, esta gráfica no aporta gran valor a la hora de la interpretación de la información, más allá del hecho de que las defunciones observadas se distancian de las esperadas de forma muy visible a lo largo de los meses de marzo a mayo, y que dicho distanciamento se vuelve a incrementar, ya a menor ritmo, a partir del mes de agosto, aunque se aprecia que vuelve a repuntar ligeramente en noviembre.
+Como podíamos esperar, esta gráfica no aporta gran valor a la hora de la interpretación de la información, más allá del hecho de que las defunciones observadas se distancian de las esperadas de forma muy visible a lo largo de los meses de marzo a mayo, y que dicho distanciamento se vuelve a incrementar, ya a menor ritmo, a partir del mes de agosto, aunque se aprecia que vuelve a repuntar ligeramente en noviembre.
 
 ```{r Cifras relevantes defunciones}
 ## Acumulados totales desde inicio de 2020
