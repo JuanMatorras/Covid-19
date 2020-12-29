@@ -1,6 +1,6 @@
-# Análisis mediante R de datos públicos sobre casos COVID-19 en España durante 2020 (¡EN CURSO!!!)
+# Análisis mediante R de datos públicos sobre casos COVID-19 en España desde el 1 de enero de 2020 (¡EN CURSO!!!)
 
-Análisis de la evolución del número de casos detecados (curvas epidémicas) en España de la COVID-19 a lo largo de 2020.
+Análisis de la evolución del número de casos detecados (curvas epidémicas) en España de la COVID-19 desde el 1 de enero de 2020.
 Los datos se han descargado de la página web con los datos oficiales proporcionados por el Gobierno de España en datos.gob.es y otros enlaces. Los enclaces concretos se detallan en el propio análisis.
 La información descargada no ha sufrido tratamiento alguno más allá del necesario para su análisis mediante R y dicha manipulación está visible en la documentación inluída.
 A disposición de quien quiera para el uso que quiera.
