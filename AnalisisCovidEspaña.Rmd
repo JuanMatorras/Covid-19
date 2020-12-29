@@ -1,5 +1,5 @@
 ---
-title: "Análisis de la evolución de la incidencia de la COVID-19 en España"
+title: "Análisis de la evolución de la incidencia de la COVID-19 en España desde el 1 de enero de 2020"
 author: "Juan Matorras Díaz-Caneja"
 date: "`r format(Sys.time(), '%d/%m/%Y')`"
 output: pdf_document
@@ -237,12 +237,12 @@ stopifnot(UltFecha == max(Datos$fecha))  ## Prueba interna consistencia datos
 ## Inicialización de variables
 InicioPeriodo14 <- as.Date("2020-01-01")
 FinPeriodo14 <- InicioPeriodo14 + 13
-IncidAcum14 <- data.frame(Fecha=as.Date(character()), IA14=integer()) 
-IA14aux <- as.integer()
+IncidAcum14 <- data.frame(Fecha=as.Date(character()), IA14=double()) 
+IA14aux <- as.double()
 InicioPeriodo7 <- as.Date("2020-01-01")
 FinPeriodo7 <- InicioPeriodo7 + 6
-IncidAcum7 <- data.frame(Fecha=as.Date(character()), IA7=integer()) 
-IA7aux <- as.integer()
+IncidAcum7 <- data.frame(Fecha=as.Date(character()), IA7=double()) 
+IA7aux <- as.double()
 
 ## Incidencia acumulada 14 días
 while (FinPeriodo14 <= UltFecha) {
@@ -252,7 +252,7 @@ while (FinPeriodo14 <= UltFecha) {
                 to = FinPeriodo14,
                 by = "day")
         DatosIA14 <- subset(Datos, fecha %in% Periodo14)
-        IA14aux <- round(sum(DatosIA14$num_casos)/poblESP*1E+05, digits = 0)
+        IA14aux <- sum(DatosIA14$num_casos)/poblESP*1E+05
         IncidAcum14 <- add_row(IncidAcum14, Fecha = FinPeriodo14, IA14 = IA14aux)
         InicioPeriodo14 <- InicioPeriodo14 + 1
         FinPeriodo14 <- FinPeriodo14 + 1
@@ -266,7 +266,7 @@ while (FinPeriodo7 <= UltFecha) {
                 to = FinPeriodo7,
                 by = "day")
         DatosIA7 <- subset(Datos, fecha %in% Periodo7)
-        IA7aux <- round(sum(DatosIA7$num_casos)/poblESP*1E+05, digits = 0)
+        IA7aux <- sum(DatosIA7$num_casos)/poblESP*1E+05
         IncidAcum7 <- add_row(IncidAcum7, Fecha = FinPeriodo7, IA7 = IA7aux)
         InicioPeriodo7 <- InicioPeriodo7 + 1
         FinPeriodo7 <- FinPeriodo7 + 1
@@ -355,9 +355,9 @@ Por completar la información comparativa entre estas comunidades se adjunta tam
 ```{r Incidencias acumuladas 14 días CCAA + España}
 InicioPeriodo14 <- as.Date("2020-01-01")
 FinPeriodo14 <- InicioPeriodo14 + 13
-IA14_CCAA <- data.frame(Fecha=as.Date(character()), IA14_MD=integer(), 
-                        IA14_CB=integer(), IA14_AS=integer(), IA14_GA=integer()) 
-IA14aux <- as.integer()
+IA14_CCAA <- data.frame(Fecha=as.Date(character()), IA14_MD=double(), 
+                        IA14_CB=double(), IA14_AS=double(), IA14_GA=double()) 
+IA14aux <- as.double()
 while (FinPeriodo14 <= UltFecha) {
         IA14auxMD <- 0
         IA14auxCB <- 0
@@ -368,10 +368,10 @@ while (FinPeriodo14 <= UltFecha) {
                 to = FinPeriodo14,
                 by = "day")
         DatosIA14_CCAA <- subset(IncidenciaCCAA, Fecha %in% Periodo14)
-        IA14auxMD <- round(sum(DatosIA14_CCAA$IncidMD), digits = 0)
-        IA14auxCB <- round(sum(DatosIA14_CCAA$IncidCB), digits = 0)
-        IA14auxAS <- round(sum(DatosIA14_CCAA$IncidAS), digits = 0)
-        IA14auxGA <- round(sum(DatosIA14_CCAA$IncidGA), digits = 0)
+        IA14auxMD <- sum(DatosIA14_CCAA$IncidMD)
+        IA14auxCB <- sum(DatosIA14_CCAA$IncidCB)
+        IA14auxAS <- sum(DatosIA14_CCAA$IncidAS)
+        IA14auxGA <- sum(DatosIA14_CCAA$IncidGA)
         IA14_CCAA <- add_row(IA14_CCAA, Fecha = FinPeriodo14, IA14_MD = IA14auxMD, 
                              IA14_CB = IA14auxCB, IA14_AS = IA14auxAS, 
                              IA14_GA = IA14auxGA)
@@ -382,7 +382,7 @@ while (FinPeriodo14 <= UltFecha) {
 IA14_CCAANac <- add_column(IA14_CCAA, IA14_Nacional=IncidAcum14$IA14)
 ## Gráfico
 g <- ggplotCovid(IA14_CCAANac, aes(Fecha))
-g <- g + labs(y = "Incidencia acumulada 14 días / 100.000 hab.")
+g <- g + labs(y = "Incid. acum. 14 días / 100.000 hab.")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
@@ -395,6 +395,78 @@ g <- g + geom_step(aes(y=IA14_CB, color="Cantabria"))
 g <- g + geom_step(aes(y=IA14_AS, color="Asturias"))
 g <- g + geom_step(aes(y=IA14_GA, color="Galicia"))
 g <- g + geom_step(aes(y=IA14_Nacional, color="Nacional"))
+## g <- g + theme(legend.justification = "center", legend.position = "right")
+g
+```
+
+## Evolución temporal de la tasa de variación de la incidencia acumulada en 14 días por cada 100.000 habitantes (IA14)
+
+En el siguiente gráfico lo que se representa es cómo varía la incidencia acumulada en 14 días por cada 100.000 habitantes (IA14) expresando la tasa de variación de esta incidencia como:
+
+tasaIA14(i) = (IA14(i)-IA14(i-1))/IA14(i-1)
+
+Se impone la condición para el cálculo de la tasa que IA14(i-1) sea mayor que cero para evitar obtener tasas de crecimiento infinitas por la división con denominador cero y la indeterminación 0/0 en los casos de secuencias de IA14 con valor 0 en los inicios de las series temporales.
+
+Como para el caso de incidencias acumuladas bajas pequeños cambios de la propia incidencia representan cambios de tasa de evolución muy elevadas al ser el divisor pequeño, modificaremos la condición indicada en el párrafo anterior para elevar el valor frontera, exigiendo que la incidencia acumulada en el día anterior tenga como mínimo un valor de 3 casos por cada 100.000 habitantes.
+
+```{r Evolución tasa variación de la incidencia acumulada 14 días}
+InicioIA14 <- as.Date("2020-01-14")
+FechaTasa <- as.Date(character())
+FechaTasa <- InicioIA14 + 1
+tasaEvolIA14 <- data.frame(Fecha=as.Date(character()), tasaIA14_Nac=double(), 
+                                tasaIA14_MD=double(), tasaIA14_CB=double(), 
+                                tasaIA14_AS=double(), tasaIA14_GA=double()) 
+while (FechaTasa <= UltFecha) {
+        IA14_CCAANac_Fecha <- subset(IA14_CCAANac, Fecha == FechaTasa)
+        IA14_CCAANac_FechaAnt <- subset(IA14_CCAANac, Fecha == FechaTasa-1)
+        if(IA14_CCAANac_FechaAnt$IA14_Nacional > 3) {
+                tasaIA14auxNac <- signif((IA14_CCAANac_Fecha$IA14_Nacional -
+                                  IA14_CCAANac_FechaAnt$IA14_Nacional)/
+                                  IA14_CCAANac_FechaAnt$IA14_Nacional, digits=4)
+        } else {tasaIA14auxNac <- 0}
+        if(IA14_CCAANac_FechaAnt$IA14_MD > 3) {
+                tasaIA14auxMD <- signif((IA14_CCAANac_Fecha$IA14_MD - 
+                                        IA14_CCAANac_FechaAnt$IA14_MD) / 
+                                        IA14_CCAANac_FechaAnt$IA14_MD, digits=4)
+        } else {tasaIA14auxMD <- 0}
+        if(IA14_CCAANac_FechaAnt$IA14_CB > 3) {
+                tasaIA14auxCB <- signif((IA14_CCAANac_Fecha$IA14_CB - 
+                                        IA14_CCAANac_FechaAnt$IA14_CB) / 
+                                        IA14_CCAANac_FechaAnt$IA14_CB, digits=4)
+        } else {tasaIA14auxCB <- 0}
+        if(IA14_CCAANac_FechaAnt$IA14_AS > 3) {
+                tasaIA14auxAS <- signif((IA14_CCAANac_Fecha$IA14_AS - 
+                                        IA14_CCAANac_FechaAnt$IA14_AS) / 
+                                        IA14_CCAANac_FechaAnt$IA14_AS, digits=4)
+        } else {tasaIA14auxAS <- 0}
+        if(IA14_CCAANac_FechaAnt$IA14_GA > 3) {
+                tasaIA14auxGA <- signif((IA14_CCAANac_Fecha$IA14_GA - 
+                                        IA14_CCAANac_FechaAnt$IA14_GA) / 
+                                        IA14_CCAANac_FechaAnt$IA14_GA, digits=4)
+        } else {tasaIA14auxGA <- 0}
+        tasaEvolIA14 <- add_row(tasaEvolIA14, Fecha = FechaTasa, 
+                                tasaIA14_Nac = tasaIA14auxNac, 
+                                tasaIA14_MD = tasaIA14auxMD, 
+                                tasaIA14_CB = tasaIA14auxCB, 
+                                tasaIA14_AS = tasaIA14auxAS,
+                                tasaIA14_GA = tasaIA14auxGA)
+        FechaTasa <- FechaTasa + 1
+}
+## Gráfico
+g <- ggplotCovid(tasaEvolIA14, aes(Fecha))
+g <- g + labs(y = "Tasa de evolución de la IA14")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+g <- g + scale_color_manual(name = "Tasa evolución IA14", 
+                            values = c("Madrid"="blue", "Cantabria"="red", 
+                                       "Asturias"="green", "Galicia"="orange", 
+                                       "Nacional" = "black"))
+g <- g + geom_step(aes(y=tasaIA14_MD, color="Madrid"))
+g <- g + geom_step(aes(y=tasaIA14_CB, color="Cantabria"))
+g <- g + geom_step(aes(y=tasaIA14_AS, color="Asturias"))
+g <- g + geom_step(aes(y=tasaIA14_GA, color="Galicia"))
+g <- g + geom_step(aes(y=tasaIA14_Nac, color="Nacional"))
 ## g <- g + theme(legend.justification = "center", legend.position = "right")
 g
 ```
@@ -454,7 +526,7 @@ g <- ggplotCovid(DatosMoMo, aes(Fecha))
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
-g <- g + labs(y = "Defunciones Acumuladas a Origen de Año")
+g <- g + labs(y = "Defun. Acumuladas a Origen Año")
 g <- g + scale_color_manual(name = "Defunciones acumuladas", 
                             values = c("Observadas"="black", "Esperadas"="blue"))
 g <- g + geom_line(aes(y=AcumObs, color="Observadas"))
