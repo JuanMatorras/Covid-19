@@ -12,10 +12,6 @@ library(knitr)
 library(tidyverse)
 library(data.table)
 Sys.setlocale("LC_TIME", "es_ES.UTF-8")
-Meses <- c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", 
-           "Nov", "Dic")
-ggplotCovid <- function(...){ggplot(...) + theme_bw(base_size=22)}
-poblESP <- 47.33E+06
 ```
 
 ## Introducción
@@ -24,16 +20,23 @@ Este es un ejercicio básico de análisis de los datos de la incidencia de la CO
 
 Por su propia esencia, éste es un documento vivo que además der ser puesto al día periódicamente con los nuevos datos disponibles, va sufriendo adiciones, modificaciones y corrección de erratas. La última versión disponible de este documento y de los datos empleados en su elaboración se pueden encontrar en el repositorio de GitHub:  <https://github.com/JuanMatorras/Covid-19>.
 
-Los datos de partida son los publicados por el Gobierno de España en la web **datos.gob.es** a través del siguiente enlace: <https://datos.gob.es/es/catalogo/e05070101-evolucion-de-enfermedad-por-el-coronavirus-covid-19>.
+Los datos de partida son los publicados por el Gobierno de España. Estos datos estaban  durante 2020 disponibles directamente a través la web **datos.gob.es** en el enlace: <https://datos.gob.es/es/catalogo/e05070101-evolucion-de-enfermedad-por-el-coronavirus-covid-19>. Con el cambio de año este enlace ha quedado anulado y es necesario acudir a: <https://cnecovid.isciii.es/covid19/#documentación-y-datos> donde se encuentran los nuevos enlaces de descarga. En este caso el archivo utilizado es el de datos por CCAA: <https://cnecovid.isciii.es/covid19/resources/casos_diagnostico_ccaa.csv>
 
 El grueso del informe se centra sobre los totales en España agregando los datos disponibles por Comunidades Autónomas, aunque también se muestran información de la incidencia en las CCAA de Madrid, Cantabria, Asturias y Galicia. La razón de la selección de estas comunidades y no otras responde a consideraciones personales y no obedece a ningún criterio técnico.
 
 ## Proceso metodológico y software utilizado
 
+```{r Parámetros globales}
+## Funciones y parámetros globales
+ggplotCovid <- function(...){ggplot(...) + theme_bw(base_size=22)}
+poblESP <- 47.33E+06
+```
+
 El archivo de datos no ha sido sometido a ningún tipo de modificación o alteración previa y su manipulación en este análisis es el mínimo imprescindible para permitir el tratamiento de los datos y obtención de resultados.
 
 ```{r Lectura de Datos y Simplificación de tabla}
-DatosCompletos <- read.csv(file.path("data", "datos_ccaas.csv"))
+## Lectura de datos de origen
+DatosCompletos <- read.csv(file.path("data", "casos_diagnostico_ccaa.csv"))
 ## Descartamos el método de detección (PCR, antígenos,...)
 DatosCCAAs <- DatosCompletos[, 1:3]
 ## Adecuación formato fechas para su correcta lectura
@@ -43,7 +46,7 @@ Datos <- DatosCCAAs %>% group_by(fecha) %>% summarise(num_casos = sum(num_casos)
                                                       .groups = 'drop')
 ```
 
-La fecha y hora de descarga de los datos que han sido utilizados para las tablas y gráficos incluídos en este informe ha sido (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "datos_ccaas.csv"))`**
+La fecha y hora de descarga de los datos que han sido utilizados para las tablas y gráficos incluídos en este informe ha sido (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "casos_diagnostico_ccaa.csv"))`**
 
 El análisis se ha llevado a cabo utilizando el software libre para análisis estadístico **R**, versión `r getRversion()`. (1)
 
@@ -51,25 +54,25 @@ Se ha hecho uso también de los paquetes complementarios:
 
 * **lubridate** para facilitar el manejo de fechas. (2)
 * **knitr** para mejorar la apariencia de tablas. (3)
-* **tydiverse** por los paquetes que incluye para ayudar en la extracción de la información y los gráficos mejorados de **ggplot2**. (4)
-* **data.table** con el objeto de manipular las tablas más eficientemente. (5)
+* **tydiverse** por los paquetes que incluye para ayudar en la extracción de la información y los gráficos mejorados de **ggplot2**. (4) y (5)
+* **data.table** con el objeto de manipular las tablas más eficientemente. (6)  
 
 ## Incidencia mensual y número total de casos detectados desde el inicio de 2020
 
 La evolución de número de casos notificados por meses se refleja en el gráfico que se muestra a continuación:
 
 ```{r Incidencia Mensual}
-CasosMensuales <- tapply(Datos$num_casos, month(Datos$fecha), sum)
-TablaCasosMensuales <- data.frame(head(Meses, length(CasosMensuales)), 
-        format(CasosMensuales, big.mark = ".", decimal.mark = ","))
-colnames(TablaCasosMensuales) <- c("Mes", "Nº casos mensuales")
+dfCasosMensuales <- Datos %>% group_by(Mes = floor_date(fecha, "month")) %>% 
+        summarize(Casos = sum(num_casos), .groups = "drop")
+TablaCasosMensuales <- data.frame("Mes" = format(dfCasosMensuales$Mes, "%b %Y"), 
+                                  "Casos" = format(dfCasosMensuales$Casos, 
+                                                   big.mark = ".", 
+                                                   decimal.mark = ","))
 TotalCasosOrigen <- sum(Datos$num_casos)
 PorcentajePoblacion <- paste(format(TotalCasosOrigen / poblESP *100, digits = 4, 
     decimal.mark = ","), "%")
-dfCasosMensuales <- data.frame(Mes = head(Meses, length(CasosMensuales)), 
-                               Casos =  CasosMensuales)
-dfCasosMensuales$Mes <- factor(dfCasosMensuales$Mes, levels = dfCasosMensuales$Mes)
 d <- ggplotCovid(dfCasosMensuales, aes(Mes, Casos))
+d <- d + labs(y = "Casos mensuales")
 d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
@@ -78,7 +81,7 @@ d + geom_col()
 
 Correspondiente a los valores que se incluyen en la tabla siguiente:
 
-`r kable(TablaCasosMensuales, align = "r")`
+`r kable(TablaCasosMensuales, align = c("l", "r"))`
 
 El número total de casos acumulados desde el 1 de enero de 2020 hasta la fecha indicada en el punto anterior según los datos oficiales disponibles en ese momento ascienden a un total de **`r format(TotalCasosOrigen, big.mark = ".", decimal.mark = ",")`**.
 
@@ -89,10 +92,10 @@ Considerando una población en España de **`r format(poblESP/1E+06, big.mark = 
 ### - Evolución de número de casos identificados por semanas:
 
 ```{r Incidencia Semanal}
-CasosSemanales <- tapply(Datos$num_casos, week(Datos$fecha), sum)
-dfCasosSemanales <- data.frame(Semana = 1:length(CasosSemanales), Casos =  
-                                       CasosSemanales)
+dfCasosSemanales <- Datos %>% group_by(Semana = floor_date(fecha, "week")) %>% 
+        summarize(Casos = sum(num_casos), .groups = "drop")
 d <- ggplotCovid(dfCasosSemanales, aes(Semana, Casos))
+d <- d + labs(y = "Casos semanales")
 d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
@@ -106,6 +109,7 @@ d + geom_col()
 ```{r Incidencia Diaria}
 dfCasosDiarios <- data.frame(Fecha = Datos$fecha, Casos = Datos$num_casos)
 d <- ggplotCovid(dfCasosDiarios, aes(Fecha, Casos))
+d <- d + labs(y = "Casos diarios")
 d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
@@ -118,6 +122,7 @@ d + geom_col()
 CasosDiariosAcumul <- cumsum(dfCasosDiarios$Casos)
 dfCasosDiariosAcumul <- data.frame(Fecha = Datos$fecha, Casos = CasosDiariosAcumul)
 d <- ggplotCovid(dfCasosDiariosAcumul, aes(Fecha, Casos))
+d <- d + labs(y = "Casos acumulados desde 1/1/2020")
 d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
@@ -135,9 +140,11 @@ PeriodoEF <- seq.Date(
   by = "day")
 DatosEF <- subset(Datos, fecha %in% PeriodoEF)
 CasosDiariosEF <- tapply(DatosEF$num_casos, yday(DatosEF$fecha), sum)
-dfCasosDiariosEF <- data.frame(Fecha = 1:length(CasosDiariosEF), Casos =  CasosDiariosEF)
+dfCasosDiariosEF <- data.frame(Dia = 1:length(CasosDiariosEF), Casos =  CasosDiariosEF)
 TotalCasosEF <- sum(DatosEF$num_casos)
-d <- ggplotCovid(dfCasosDiariosEF, aes(Fecha, Casos))
+d <- ggplotCovid(dfCasosDiariosEF, aes(Dia, Casos))
+d <- d + labs(x = "Días desde inicio año 2020")
+d <- d + labs(y = "Casos diarios")
 d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
@@ -201,6 +208,8 @@ CasosDiariosHasta15mar <- c(CasosDiariosEF, CasosDiarios1_8mar, CasosDiarios9_15
 dfCasosDiariosHasta15mar <- data.frame(Fecha = 1:length(CasosDiariosHasta15mar), Casos = 
                                                CasosDiariosHasta15mar)
 d <- ggplotCovid(dfCasosDiariosHasta15mar, aes(Fecha, Casos))
+d <- d + labs(x = "Días desde inicio año 2020")
+d <- d + labs(y = "Casos diarios")
 d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
@@ -407,7 +416,7 @@ tasaIA14(i) = (IA14(i)-IA14(i-1))/IA14(i-1)
 
 Se impone la condición para el cálculo de la tasa que IA14(i-1) sea mayor que cero para evitar obtener tasas de crecimiento infinitas por la división con denominador cero y la indeterminación 0/0 en los casos de secuencias de IA14 con valor 0 en los inicios de las series temporales.
 
-Como para el caso de incidencias acumuladas bajas pequeños cambios de la propia incidencia representan cambios de tasa de evolución muy elevadas al ser el divisor pequeño, modificaremos la condición indicada en el párrafo anterior para elevar el valor frontera, exigiendo que la incidencia acumulada en el día anterior tenga como mínimo un valor de 3 casos por cada 100.000 habitantes.
+Como para el caso de incidencias acumuladas de valores muy bajor, pequeños cambios de la dicha incidencia representan cambios de tasa de evolución muy elevadas al ser el divisor pequeño, modificaremos la condición indicada en el párrafo anterior, exigiendo que la incidencia acumulada en el día anterior tenga como mínimo un valor de 3 casos por cada 100.000 habitantes.
 
 ```{r Evolución tasa variación de la incidencia acumulada 14 días}
 InicioIA14 <- as.Date("2020-01-14")
@@ -471,6 +480,10 @@ g <- g + geom_step(aes(y=tasaIA14_Nac, color="Nacional"))
 g
 ```
 
+Hay que hacer notar que, aunque la gráfica resultante tenga una apariencia similar a la del Número reproductivo básico instantáneo - Rt (número promedio de casos secundarios que cada sujeto infectado puede llegar a infectar en una etapa de tiempo (t)), no se trata de este indicador, cuyo cálculo es totalmente diferente al presentado aquí. El número reproductivo básico ínstantáneo calculado por el Instituto de Salud Carlos III puede ser encontrado en el siguiente enlace: <https://cnecovid.isciii.es/covid19/#ccaa>. Nótese que el nivel de referecia del número reproductivo es 1 mientras que para la tasa de evolución de la IA14 es 0.
+
+Por otro lado es lógica esta similitud entre las gráficas de la tasa de evolución de la IA14 y la del número reproductivo básico instántaneo, ya que números reproductivos altos se corresponden con evoluciones crecientes en la incidencia de la enfermedad mientras que números reproductivos por debajo de 1 marcan evoluciones decrecientes de la incidencia en el número de casos.
+
 ## Exceso de mortalidad
 
 Como último paso del análisis obtendremos cifras del exceso de mortalidad registrado en este año, presumiblemente achacable a la incidencia de la pandemia de la COVID-19. Los datos se han obtenido del enlace del **Instituto de Salud Carlos III**: <https://momo.isciii.es/public/momo/data>.
@@ -495,7 +508,7 @@ Representemos en primer lugar la evolución del número de defunciones en compar
 
 ```{r Gráfico mortalidad 2020}
 g <- ggplotCovid(DatosMoMo, aes(Fecha))
-g <- g + labs(y = "Defunciones")
+g <- g + labs(y = "Defunciones diarias")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
@@ -508,7 +521,7 @@ g <- g + geom_line(aes(y=DefEsp, color="Esperadas"))
 g
 ```
 
-Como se puede ver, existe un periodo de mortalidad totalmente disparada a lo largo de los meses de marzo a mayo, con una punta con valores cercanos al triple de lo esperado, mientras que luego se aprecia otro periodo de desviación al alza, no tan acusado pero más prolongado en el tiempo y con una tendencia creciente, que cubríría desde agosto llegandi hasta diciembre.
+Como se puede ver, existe un periodo de mortalidad totalmente disparada a lo largo de los meses de marzo a mayo, con una punta con valores cercanos al triple de lo esperado, mientras que luego se aprecia otro periodo de desviación al alza, no tan acusado pero más prolongado en el tiempo y con una tendencia creciente a lo largo de varios meses antes de empezar a descender, que cubríría desde agosto hasta bastante avanzado diciembre.
 
 Técnicamente se define "periodo de exceso de mortalidad" cuando se cumplen las siguientes condiciones:
 
@@ -517,7 +530,7 @@ Técnicamente se define "periodo de exceso de mortalidad" cuando se cumplen las 
 * La fecha de fin del periodo es el último día con las defunciones observadas por encima de las estimadas.
 * Si entre la fecha de fin de un periodo y la fecha de inicio del siguiente hay dos días, se unifican ambos periodos, tomando la fecha de inicio del primer periodo y fecha de fin del último.
 
-Con estas premisas podemos aislar los periodos en los que se han producido dichas circunstancias y calcular el exceso de defunciones durante esos lapsos de tiempo concretos. Ahora bien, antes de pasar a realizar dichos cálculos, realicemos uno más básico, comparando directamente las cifras de defunciones esperadas acumuladas a lo largo del año con las que realmente se han registrado:
+Con estas premisas podemos aislar los periodos en los que se han producido dichas circunstancias y calcular el exceso de defunciones durante esos lapsos de tiempo concretos. Ahora bien, antes de pasar a realizar dichos cálculos, realicemos uno más básico, comparando directamente las cifras de defunciones esperadas acumuladas a lo largo de 2020 y lo que va de año 2021 con las que realmente se han registrado:
 
 ```{r Defunciones acumuladas - esperadas y observadas}
 DatosMoMo[,AcumObs := cumsum(DefObs)]
@@ -526,7 +539,7 @@ g <- ggplotCovid(DatosMoMo, aes(Fecha))
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
-g <- g + labs(y = "Defun. Acumuladas a Origen Año")
+g <- g + labs(y = "Defun. Acumuladas desde 1/1/2020")
 g <- g + scale_color_manual(name = "Defunciones acumuladas", 
                             values = c("Observadas"="black", "Esperadas"="blue"))
 g <- g + geom_line(aes(y=AcumObs, color="Observadas"))
@@ -535,7 +548,7 @@ g <- g + geom_line(aes(y=AcumEsp, color="Esperadas"))
 g
 ```
 
-Como podíamos esperar, esta gráfica no aporta gran valor a la hora de la interpretación de la información, más allá del hecho de que las defunciones observadas se distancian de las esperadas de forma muy visible a lo largo de los meses de marzo a mayo, y que dicho distanciamento se vuelve a incrementar, ya a menor ritmo, a partir del mes de agosto, aunque se aprecia que vuelve a repuntar ligeramente en noviembre.
+Como podíamos esperar, esta gráfica no aporta gran valor a la hora de la interpretación de la información, más allá del hecho de que las defunciones observadas se distancian de las esperadas de forma muy visible a lo largo de los meses de marzo a mayo de 2020, y que dicho distanciamento se vuelve a incrementar, ya a menor ritmo, a partir del mes de agosto, aunque se aprecia que vuelve a repuntar ligeramente en noviembre de 2020.
 
 ```{r Cifras relevantes defunciones}
 ## Acumulados totales desde inicio de 2020
@@ -659,11 +672,9 @@ PeriodosExcesoUnido <- add_column(PeriodosExcesoUnido, "Porcentaje de exceso" =
 
 `r kable(PeriodosExcesoUnido, align = "c", format.args = list(big.mark=".", decimal.mark=","))`
 
-Aunque en el exceso de defunciones haya casos de fallecimiento no directamente imputables a la COVID-19, hay que asignar dichas muertes a la crisis del COVID-19. Si determinadas patologías no son debidamente atendidas en tiempo y forma por la sobrecarga del sistema sanitario provocado por la pandemia, los fallecimientos asociados a las mismas son por tanto atribuibles a la COVID-19 aunque el virus no haya sido la causa directa del fallecimiento correspondiente.
+Aunque en el exceso de defunciones haya casos de fallecimiento no directamente imputables a la COVID-19, hay que asignar dichas muertes a la crisis del COVID-19. Si determinadas patologías no son debidamente atendidas en tiempo y forma por la sobrecarga del sistema sanitario provocada por la pandemia, los fallecimientos asociados a las mismas son por tanto atribuibles a la COVID-19 aunque el virus no haya sido la causa directa del fallecimiento correspondiente.
 
 El índice de mortalidad de la COVID-19 en España en 2020, medido como exceso de mortalidad atribuible directa o indrectamente a la COVID por cada mil habitantes, es de **`r format(TotalExcesoDefunciones/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**.
-
-Para tener algo con lo que comparar, el índice de mortalidad observado por todas las causas, en lo que va de año de 2020, es de **`r format(TotalDefAcumObs/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**, mientras que el esperado a estas alturas de año sería de **`r format(TotalDefAcumEsp/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**, en ambos casos también por cada mil habitantes.
 
 Antes de seguir avanzando no podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadisticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentmente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
 
@@ -799,5 +810,8 @@ Como se puede ver, con estos datos no es posible afirmar que la COVID-19 en tér
 (4) Wickham et al., (2019). Welcome to the tidyverse. Journal of Open
     Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
     
-(5) Matt Dowle and Arun Srinivasan (2020). data.table: Extension of `data.frame`. 
+(5) H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New
+    York, 2016.
+    
+(6) Matt Dowle and Arun Srinivasan (2020). data.table: Extension of `data.frame`. 
     R package version 1.13.2. https://CRAN.R-project.org/package=data.table
