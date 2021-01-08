@@ -153,9 +153,9 @@ d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE,
 d + geom_col()
 ```
 
-Los casos reportados totales a lo largo de esos dos meses son **`r format(TotalCasosEF, big.mark = ".", decimal.mark = ",")`**, si bien es claro que se produce una acusada inflexión en la pendiente de crecimiento a partir del día 50.
-
 **NOTA:** Este gráfico ha permitido detectar un problema en los datos de origen que se está manifestando en los primeros días de 2021. Están apareciendo casos declarados en los primeros días de 2020 que antes no existían y que más que una revisión de datos antiguos puede ser un problema de deficiente registro de nuevos casos correspondientes a 2021 que se están dando de alta con fecha de 2020. Esperemos que esta deficiencia se detecte y corrija en los próximos días.
+
+Los casos reportados totales a lo largo de esos dos meses son **`r format(TotalCasosEF, big.mark = ".", decimal.mark = ",")`**, si bien es claro que se produce una acusada inflexión en la pendiente de crecimiento a partir del día 50.
 
 ```{r Primeros 50+10 días}
 Periodo1_50 <- seq.Date(
@@ -171,7 +171,6 @@ Datos51_60 <- subset(Datos, fecha %in% Periodo51_60)
 TotalCasos1_50 <- sum(Datos1_50$num_casos)
 TotalCasos51_60 <- sum(Datos51_60$num_casos)
 ```
-
 
 Siendo así que el desglose de número agregado de casos identificados en dichos primeros 50 días y los siguientes 10 días queda de la siguiente manera:
 
