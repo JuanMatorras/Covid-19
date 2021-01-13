@@ -153,7 +153,7 @@ d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE,
 d + geom_col()
 ```
 
-**NOTA:** Este gráfico ha permitido detectar un problema en los datos de origen que se está manifestando en los primeros días de 2021. Están apareciendo casos declarados en los primeros días de 2020 que antes no existían y que más que una revisión de datos antiguos puede ser un problema de deficiente registro de nuevos casos correspondientes a 2021 que se están dando de alta con fecha de 2020. Esperemos que esta deficiencia se detecte y corrija en los próximos días.
+**NOTA IMPORTANTE:** Este gráfico ha permitido detectar un problema en los datos de origen que se está manifestando en los primeros días de 2021. Están apareciendo casos declarados en los primeros días de 2020 que antes no existían y que más que una revisión de datos antiguos puede ser un problema de deficiente registro de nuevos casos correspondientes realmente a 2021 que se están dando de alta con fecha de 2020. En el repositorio de GitHub al que se hace referencia al principio del documento se adjunta una tabla comprativa donde se puede observar cómo han evolucionado el número de casos declarados para enero de 2020 en las distintas CCAA entre los dias finales de diciembre de 2020 y primeros días de 2021. Las mayores distorsiones se aprecian en los datos de las comunidades autónomas de Madrid y Cataluña en las que para los primeros días de enero de 2020 tenían declarados números de casos con cifras muy bajas, en general 0 o 1, y que durante los primeros días de enero de 2021 empiezan a mostrar cantidades de casos que superan la veintena y la treintena para esas fechas del año 2020. Se puso en conocimiento de este potencial problema al Centro de Estudios Epidemiológicos del Instituto de Salud Carlos III y de hecho se observan ya algunas rectificaciones en los datos correspondiente a Madrid. Estos datos aparentemente erróneos no se han eliminado ni sufrido ningún tipo de tratamiento especial y se han manipulado como si fuesen correctos.
 
 Los casos reportados totales a lo largo de esos dos meses son **`r format(TotalCasosEF, big.mark = ".", decimal.mark = ",")`**, si bien es claro que se produce una acusada inflexión en la pendiente de crecimiento a partir del día 50.
 
@@ -236,7 +236,7 @@ Tomando esos 14 días previos, es decir, entre el 29 de febrero y el 13 de marzo
 
 Contrasta este valor de forma muy llamativa con los límites que se han estado manejando en la segunda ola de infecciones, donde se ha hablado de 200, 500 e incluso 1.000 casos/100.000 hab.
 
-## Evolución de la incidencia acumulada a lo largo de todo el año
+## Evolución de la incidencia acumulada a lo largo de todo el periodo de análisis
 
 En el siguiente gráfico se representan las incidencias acumuladas por cada 100.000 habitantes correspondientes a periodos de 14 y 7 días:
 
@@ -293,7 +293,7 @@ g <- g + labs(y = "Incidencia Acumulada 7/14 días")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
-g <- g + scale_color_manual(name="Inc.Acum./100.000", 
+g <- g + scale_color_manual(name="Incid. Acum.", 
                            values = c("14 días" = "blue", "7 días" = "red"))
 g <- g + geom_step(aes(y=IA14, color="14 días"))
 g <- g + geom_step(aes(y=IA7, color="7 días"))
@@ -321,7 +321,7 @@ g <- ggplotCovid(CasosDiariosCCAA, aes(Fecha)) + labs(y = "Casos reportados")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
-g <- g + scale_color_manual(name="Nº de casos", 
+g <- g + scale_color_manual(name="Casos diarios", 
                            values = c("Madrid"="blue", "Cantabria"="red", 
                                       "Asturias"="green", "Galicia"="orange"))
 g <- g + geom_step(aes(y=CasosMD, color="Madrid"))
@@ -351,7 +351,7 @@ g <- g + labs(y = "Incidencia (Casos / 100.000 hab.)")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
-g <- g + scale_color_manual(name="Incidencia/100.000", 
+g <- g + scale_color_manual(name="Incidencia diaria", 
                            values = c("Madrid"="blue", "Cantabria"="red", 
                                       "Asturias"="green", "Galicia"="orange"))
 g <- g + geom_step(aes(y=IncidMD, color="Madrid"))
@@ -398,7 +398,7 @@ g <- g + labs(y = "Incid. acum. 14 días / 100.000 hab.")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
-g <- g + scale_color_manual(name = "IA14d/100.000", 
+g <- g + scale_color_manual(name = "IA14", 
                             values = c("Madrid"="blue", "Cantabria"="red", 
                                        "Asturias"="green", "Galicia"="orange", 
                                        "Nacional" = "black"))
@@ -406,7 +406,7 @@ g <- g + geom_step(aes(y=IA14_MD, color="Madrid"))
 g <- g + geom_step(aes(y=IA14_CB, color="Cantabria"))
 g <- g + geom_step(aes(y=IA14_AS, color="Asturias"))
 g <- g + geom_step(aes(y=IA14_GA, color="Galicia"))
-g <- g + geom_step(aes(y=IA14_Nacional, color="Nacional"))
+g <- g + geom_step(aes(y=IA14_Nacional, color="Nacional"), size=0.75)
 ## g <- g + theme(legend.justification = "center", legend.position = "right")
 g
 ```
@@ -478,7 +478,7 @@ g <- g + geom_step(aes(y=tasaIA14_MD, color="Madrid"))
 g <- g + geom_step(aes(y=tasaIA14_CB, color="Cantabria"))
 g <- g + geom_step(aes(y=tasaIA14_AS, color="Asturias"))
 g <- g + geom_step(aes(y=tasaIA14_GA, color="Galicia"))
-g <- g + geom_step(aes(y=tasaIA14_Nac, color="Nacional"))
+g <- g + geom_step(aes(y=tasaIA14_Nac, color="Nacional"), size=0.75)
 ## g <- g + theme(legend.justification = "center", legend.position = "right")
 g
 ```
@@ -617,7 +617,7 @@ PeriodosExcesoUnido <- data.table("Inicio"=as.Date(character()),
 n <- as.integer(1)
 while (n <= nrow(PeriodosExceso)) {
         PeriodosExcesoUnidoInicioN <- PeriodosExceso$Inicio[n]
-        while (((PeriodosExceso$Inicio[n+1] - PeriodosExceso$Fin[n]) <= 2) &
+        while (((PeriodosExceso$Inicio[n+1] - PeriodosExceso$Fin[n]) <= 3) &
                n < nrow(PeriodosExceso)) {n <- n + 1}
         PeriodosExcesoUnidoFinN <- PeriodosExceso$Fin[n]
         PeriodosExcesoUnido <- add_row(PeriodosExcesoUnido, 
@@ -631,7 +631,7 @@ while (n <= nrow(PeriodosExceso)) {
 
 `r kable(PeriodosExceso, align = "c")`
 
-* Después de unificar los periodos de exceso cercanos (<= 2 días):
+* Después de unificar los periodos de exceso cercanos (<= 2 días intermedios):
 
 `r kable(PeriodosExcesoUnido, align = "c")`
 
