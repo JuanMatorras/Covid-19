@@ -14,9 +14,9 @@ library(data.table)
 Sys.setlocale("LC_TIME", "es_ES.UTF-8")
 ```
 
-## Introducción
+## 1.- Introducción
 
-Este es un ejercicio básico de análisis de los datos de la incidencia de la COVID-19 en España a lo largo de 2020. Habiendo la cantidad de informes y herramientas para el análisis de los datos sobre la incidencia de la COVID-19 que ya existen, este documento no pretende aportar nada singularmente nuevo y su razón de ser no es otra que poner en práctica y profundizar por mi parte en el aprendizaje de las técnicas de análisis de datos y el lenguaje R que inicié en la segunda mitad de septiembre de 2020.
+Este es un ejercicio básico de análisis de los datos de la incidencia de la COVID-19 en España desde el comienzo del año 2020. Habiendo la cantidad de informes y herramientas para el análisis de los datos sobre la incidencia de la COVID-19 que ya existen, este documento no pretende aportar nada singularmente nuevo y su razón de ser no es otra que poner en práctica y profundizar por mi parte en el aprendizaje de las técnicas de análisis de datos y el lenguaje R que inicié en la segunda mitad de septiembre de 2020.
 
 Hay que matizar que, si bien este estudio empezó cubriendo únicamente fechas dentro de 2020, por la propia duración de la pandemia, el alcance del mismo se ha extendido para acomodar los datos disponibles correspondientes ya al año 2021.
 
@@ -26,7 +26,7 @@ Los datos de partida son los publicados por el Gobierno de España. Estos datos 
 
 El grueso del informe se centra sobre los totales en España agregando los datos disponibles por Comunidades Autónomas, aunque también se muestran información de la incidencia en las CCAA de Madrid, Cantabria, Asturias y Galicia. La razón de la selección de estas comunidades y no otras responde a consideraciones personales y no obedece a ningún criterio técnico.
 
-## Proceso metodológico y software utilizado
+## 2.- Proceso metodológico y software utilizado
 
 ```{r Parámetros globales}
 ## Funciones y parámetros globales
@@ -59,7 +59,9 @@ Se ha hecho uso también de los paquetes complementarios:
 * **tydiverse** por los paquetes que incluye para ayudar en la extracción de la información y los gráficos mejorados de **ggplot2**. (4) y (5)
 * **data.table** con el objeto de manipular las tablas más eficientemente. (6)  
 
-## Incidencia mensual y número total de casos detectados desde el inicio de 2020
+Nota: La codificación empleada en los datos fuente para la identificación de comunidades autónomas y provincias se corresponde con la ISO 3166-2:ES. La correspondencia entre dicha codificación y la comunidad autónoma o provincia referida puede ser consultada, entre otras fuentes, en: <https://es.wikipedia.org/wiki/ISO_3166-2:ES>
+
+## 3.- Casos por meses y número total de casos detectados desde el inicio de 2020
 
 La evolución de número de casos notificados por meses se refleja en el gráfico que se muestra a continuación:
 
@@ -78,6 +80,10 @@ d <- d + labs(y = "Casos mensuales")
 d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
+d <- d + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(dfCasosMensuales$Mes,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
 d + geom_col()
 ```
 
@@ -85,13 +91,17 @@ Correspondiente a los valores que se incluyen en la tabla siguiente:
 
 `r kable(TablaCasosMensuales, align = c("l", "r"))`
 
-El número total de casos acumulados desde el 1 de enero de 2020 hasta la fecha indicada en el punto anterior según los datos oficiales disponibles en ese momento ascienden a un total de **`r format(TotalCasosOrigen, big.mark = ".", decimal.mark = ",")`**.
+El número total de casos acumulados desde el 1 de enero de 2020 hasta la fecha indicada en el punto anterior según los datos oficiales disponibles en ese momento ascienden a un total de **`r format(TotalCasosOrigen, big.mark = ".", decimal.mark = ",")`** personas.
 
-Considerando una población en España de **`r format(poblESP/1E+06, big.mark = ".", decimal.mark = ",")`** millones de personas según los datos publicados por el INE (Instituto Nacional de Estadística) correspondientes al inicio del año 2020, el porcentaje de contagio de la población es del **`r PorcentajePoblacion`** hasta la fecha.
+**Nota:** Véase el apartado 6 donde se explican los errores que están apareciendo en los datos correspondientes a enero de 2020 ya que se han estado cometiendo errores en el registro de nuevos casos en enero de 2021 que se han asignado incorrectamente al año 2020. De hecho, hasta final de 2020, el número total de casos reportados a nivel nacional para el mes de enero de ese año se movía por debajo de los 50 casos mientras que con los datos disponibles en los primeros días de enero de 2021 esta cifra fue aumentando llegando a alcanzar más de 550 casos.
 
-## Incidencia semanal
+Lo que en cualquier caso es de conocimiento general es la carestía de pruebas diagnósticas durante la primera fase de la pandemia, lo que apunta a una clara subestimación de los casos reales en esos primeros meses de 2020, particularmente en marzo y abril. Cabría intentar estimar el número real de casos en estos primeros meses aplicando el ratio de pruebas con resultado positivo respecto a pruebas realizadas en la segunda mitad de año al número de pruebas realizadas en dichos meses iniciales pero no deja de ser una aproximación un tanto burda y harían falta datos fiables del número de pruebas que se han realizado, tanto en el ámbito público como privado, además de necesitarse datos complementarios ya que los casos detectados luego tienen múltiples pruebas de seguimiento.
 
-### - Evolución de número de casos identificados por semanas:
+Considerando una población en España de **`r format(poblESP/1E+06, big.mark = ".", decimal.mark = ",")`** millones de personas según los datos publicados por el INE (Instituto Nacional de Estadística) correspondientes al inicio del año 2020, el porcentaje de contagio de la población es del **`r PorcentajePoblacion`** hasta la fecha. Insistimos en que, puesto que la incidencia de la enfermedad en los primeros meses de 2020 está por fuerza minusvalorada por la escasez de pruebas de diagnóstico, y no pudiendo olvidar que además tenémos el fenómeno de los casos de infección asintomáticos, el porcentaje de población afectada realmente es necesariamente más alto que el reflejado en este cálculo y es más que probable que sea del orden del doble. De hecho, para poder cubrir esta laguna y tener una idea más fiable del verdadero impacto de la enfermedad sobre el total de la pobllación están los estudios de sero-epidemiología que se han venido realizando desde junio de 2020 (<https://portalcne.isciii.es/enecovid19/>).
+
+## 4.- Casos semanales
+
+Evolución de número de casos identificados por semanas:
 
 ```{r Incidencia Semanal}
 dfCasosSemanales <- Datos %>% group_by(Semana = floor_date(fecha, "week")) %>% 
@@ -101,10 +111,14 @@ d <- d + labs(y = "Casos semanales")
 d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
+d <- d + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(dfCasosSemanales$Semana,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
 d + geom_col()
 ```
 
-## Incidencia diaria
+## 5.- Casos diarios
 
 ### - Curva epidémica de los casos notificados por días:
 
@@ -115,6 +129,10 @@ d <- d + labs(y = "Casos diarios")
 d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
+d <- d + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(dfCasosDiarios$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
 d + geom_col()
 ```
 
@@ -128,10 +146,16 @@ d <- d + labs(y = "Casos acumulados desde 1/1/2020")
 d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
+d <- d + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(dfCasosDiariosAcumul$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
 d + geom_col()
 ```
 
-## Detalle del número de casos en los dos primeros meses de 2020
+El resultado de esta desgregación de datos, o más estrictamente de la ausencia de agregación de datos puestos que los datos de partida son diarios, es la aparición de dientes de sierra que son simplemente el reflejo del descenso en el número de pruebs realizadas en fines de semana y festivos en comparación con los realizados en días laborables.
+
+## 6.- Detalle del número de casos en los primeros meses de 2020
 
 ### - Evolución diaria del número de casos durante los dos primeros meses del año:
 
@@ -153,7 +177,7 @@ d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE,
 d + geom_col()
 ```
 
-**NOTA IMPORTANTE:** Este gráfico ha permitido detectar un problema en los datos de origen que se está manifestando en los primeros días de 2021. Están apareciendo casos declarados en los primeros días de 2020 que antes no existían y que más que una revisión de datos antiguos puede ser un problema de deficiente registro de nuevos casos correspondientes realmente a 2021 que se están dando de alta con fecha de 2020. En el repositorio de GitHub al que se hace referencia al principio del documento se adjunta una tabla comprativa donde se puede observar cómo han evolucionado el número de casos declarados para enero de 2020 en las distintas CCAA entre los dias finales de diciembre de 2020 y primeros días de 2021. Las mayores distorsiones se aprecian en los datos de las comunidades autónomas de Madrid y Cataluña en las que para los primeros días de enero de 2020 tenían declarados números de casos con cifras muy bajas, en general 0 o 1, y que durante los primeros días de enero de 2021 empiezan a mostrar cantidades de casos que superan la veintena y la treintena para esas fechas del año 2020. Se puso en conocimiento de este potencial problema al Centro de Estudios Epidemiológicos del Instituto de Salud Carlos III y de hecho se observan ya algunas rectificaciones en los datos correspondiente a Madrid. Estos datos aparentemente erróneos no se han eliminado ni sufrido ningún tipo de tratamiento especial y se han manipulado como si fuesen correctos.
+**NOTA IMPORTANTE:** Este gráfico ha permitido detectar un problema en los datos de origen que se está manifestando en los primeros días de 2021. Están apareciendo casos asignados a los primeros días de 2020 que antes no existían por un problema de deficiente registro de nuevos casos correspondientes realmente a 2021 que se están dando de alta con fecha de 2020. En el repositorio de GitHub al que se hace referencia al principio del documento se adjunta una tabla comprativa donde se puede observar cómo han evolucionado el número de casos declarados para enero de 2020 en las distintas CCAA entre los dias finales de diciembre de 2020 y primeros días de 2021. Las mayores distorsiones se aprecian en los datos de las comunidades autónomas de Madrid y Cataluña en las que para los primeros días de enero de 2020 tenían declarados números de casos con cifras muy bajas, en general 0 o 1, y que durante los primeros días de enero de 2021 empiezan a mostrar cantidades de casos que superan la veintena y la treintena para esas fechas del año 2020. Se puso en conocimiento de este potencial problema al Centro de Estudios Epidemiológicos del Instituto de Salud Carlos III el día 8 de enero de 2021 desde donde confrimaron el problema el día 19 de enero, informando que se esperaba corregir el problema en los días siguientes. Estos datos aparentemente erróneos no se han eliminado ni sufrido ningún tipo de tratamiento especial y se han manipulado como si fuesen correctos en espera de que se complete la revisión y se corrijan los datos fuente.
 
 Los casos reportados totales a lo largo de esos dos meses son **`r format(TotalCasosEF, big.mark = ".", decimal.mark = ",")`**, si bien es claro que se produce una acusada inflexión en la pendiente de crecimiento a partir del día 50.
 
@@ -179,7 +203,7 @@ Siendo así que el desglose de número agregado de casos identificados en dichos
 
 En 10 días se detectan **`r format(round(TotalCasos51_60/TotalCasos1_50, digits = 1), decimal.mark = ",")`** veces los casos que se habían producido en los 50 días anteriores.
 
-## Subsiguiente evolución durante la primera quincena de marzo
+### - Subsiguiente evolución durante la primera quincena de marzo:
 
 En este apartado analizamos cómo continúa desarrollándose la propagación de la pandemia a principos del mes de marzo, estableciendo por su relevancia en lo ocurrido en España durante esos días dos periodos de tiempo diferenciados, del 1 al 8 y del 9 al 15.
 
@@ -219,7 +243,7 @@ d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE,
 d + geom_col()
 ```
 
-## Incidencia acumulada por 100.000 habitantes en los 14 días previos a la declaración del estado de alarma del 14 de marzo
+### - Incidencia acumulada por 100.000 habitantes en los 14 días previos a la declaración del estado de alarma del 14 de marzo
 
 Pasemos ahora a calcular la incidencia acumulada por cada 100.000 habitantes en los 14 días previos a la declaración del estado de alarma que tuvo efecto
 
@@ -234,9 +258,9 @@ IncidAcumPrevioEstadoAlarma <- sum(DatosPrevioEstadoAlarma$num_casos)/poblESP*1E
 
 Tomando esos 14 días previos, es decir, entre el 29 de febrero y el 13 de marzo, la incidencia acumulada por cada 100.000 habitantes, con el mismo dato de población presentado más arriba fue de **`r round(IncidAcumPrevioEstadoAlarma)`** casos/100.000 hab.
 
-Contrasta este valor de forma muy llamativa con los límites que se han estado manejando en la segunda ola de infecciones, donde se ha hablado de 200, 500 e incluso 1.000 casos/100.000 hab.
+Contrasta este valor de forma muy llamativa con los límites que se han estado manejando en España durante la segunda ola de infecciones, donde se ha hablado de 200, 500 e incluso 1.000 casos/100.000 hab. para empezar a tomar medidas de limitación de la movilidad y el contacto entre personas, valores totalmente irracionales y desproporcionados en comparación con los manejados por otros países de la Unión Europea.
 
-## Evolución de la incidencia acumulada a lo largo de todo el periodo de análisis
+## 7.- Evolución de la incidencia acumulada a lo largo de todo el periodo de análisis
 
 En el siguiente gráfico se representan las incidencias acumuladas por cada 100.000 habitantes correspondientes a periodos de 14 y 7 días:
 
@@ -293,14 +317,27 @@ g <- g + labs(y = "Incidencia Acumulada 7/14 días")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
-g <- g + scale_color_manual(name="Incid. Acum.", 
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(IncidAcum7_14$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+g <- g + scale_color_manual(name = "Incid. Acum.", 
                            values = c("14 días" = "blue", "7 días" = "red"))
-g <- g + geom_step(aes(y=IA14, color="14 días"))
-g <- g + geom_step(aes(y=IA7, color="7 días"))
+g <- g + geom_step(aes(y=IA14, color = "14 días"))
+g <- g + geom_step(aes(y=IA7, color = "7 días"))
+g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
 g
 ```
 
-## Comparación de la evolución del número de casos entre Madrid y otras CCAA
+Detengámonos un momento en este punto para analizar estas curvas, primero comparando la incidencia acumulada por cada 100.000 habitantes en 14 días (IA14) con la acumulada en 7 días (IA7), para luego centrarnos en la propia evolución temporal de estos indicadores.
+
+Dentro de los propios círculos de científicos epidemiológicos existe cierta disparidad de opinión respecto a si hacer el seguimiento de la IA14, la IA7 o incluso ambas en paralelo. En primer lugar no perdamos de vista que el hecho de agregar casos identificados durante un perido determinado de tiempo, sea éste de 7 días o de 14 días, lo que se persigue con esta operación es laminar los picos que se producen en la detección de casos diarios, principalmente por la influencia de fines de semana y festivos que ya vimos en el punto 5 y así poder determinar con más facilidad la evolución de la propagación de una determinada enfermedad entre la población. La razón para ampliar de 7 a 14 días debería estar en poder absorber mejor las oscilaciones que se provocan por festivos y puentes y no tanto en el mayor o menor periodo de incubación dela enfermedad. De hecho, el efecto laminador de la IA14 frente a la IA7 se puede observar claramente al comparar ambas curvas en el mes de diciembre de 2020. Es más, contrariamente a lo que se pueda presuponer sobre el hecho de que utilizar un periodo más corto de tiempo ayude a tener una mejor idea de la evolución de la enfermedad, esto es solo cierto cuando la curva de incidencia empieza a descender pero no para el momento de aumento de la incidencia. Como se comprueba en la gráfica adjunta, la IA14 empieza a ascender y a mayor ritmo que la IA7, mientras que el descenso de la primera sí que se demora con respecto a la segunda. Lo que sí es lógico y resulta evidente es que los límites de alarma deben ser ditintos para cada una de ellas.
+
+Pasando ahora al análisis de la evolución de ambos indicadores y obviando el hecho ya comentado de la subestimación del primer pico de la ola por la baja realización de pruebas de diagnóstico, queda claro que, a pesar de que los medios de comunicación y, en consecuencia, la propia población general hablen de una tercera ola de la pandemia que arranca en el mes de diciembre, no habiendo bajado la IA14 de 200 sería más apropiado hablar de una segunda fase de la segunda ola puesto que ésta no se puede decir que llegó a estar bajo control. Si analizamos el impacto de la enfermedad desde el punto de vista de la mortalidad (ver apartado 10) sí que podríamos afirmar de algún modo que la segunda ola habría terminado en diciembre, en tanto en cuanto en este mes se cierra el segundo periodo de exceso de mortalidad, pero no así desde el punto de vista de la incidencia acumulada.
+
+## 8.- Comparación de la evolución del número de casos entre Madrid y otras CCAA
+
+### - Casos reportados por CCAA
 
 En el siguiente gráfico se compara la evolución de la enfermedad entre comunidades muy diferentes, la Comunidad Autónoma de Madrid, Cantabria, Asturias y Galicia:
 
@@ -321,6 +358,10 @@ g <- ggplotCovid(CasosDiariosCCAA, aes(Fecha)) + labs(y = "Casos reportados")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(CasosDiariosCCAA$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
 g <- g + scale_color_manual(name="Casos diarios", 
                            values = c("Madrid"="blue", "Cantabria"="red", 
                                       "Asturias"="green", "Galicia"="orange"))
@@ -328,14 +369,17 @@ g <- g + geom_step(aes(y=CasosMD, color="Madrid"))
 g <- g + geom_step(aes(y=CasosCB, color="Cantabria"))
 g <- g + geom_step(aes(y=CasosAS, color="Asturias"))
 g <- g + geom_step(aes(y=CasosGA, color="Galicia"))
+g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
 g
 ```
 
+### - Incidencia por cada 100.000 habitantes por CCAA
+
 Como es lógico, los datos no son comparables en términos absolutos por la gran diferencia de población entre estas comunidades autónomas, por no entrar en la forma de vida en unas y otras, aunque sí que haya similitudes entre las de la cornisa cantábrica, y en cómo esto impacta en la dispersión de la enfermedad. 
 
-Para solventar este problema representamos ahora número de casos por cada 100.000 habitantes, con los datos de población en cada comunidad disponibles en el momento en el INE  (<https://www.ine.es/dynInfo/Infografia/Territoriales/capitulo.html#!tabla>):
+Para solventar este problema representamos ahora número de casos por cada 100.000 habitantes, con los datos de población en cada comunidad disponibles en el momento en el INE  (<https://www.ine.es/dynInfo/Infografia/Territoriales/capitulo.html#!tabla>).
 
-```{r Casos en Cantabria y Madrid por cada 100.000 habitantes}
+```{r Casos por cada 100.000 habitantes en Cantabria, Madrid y otras CCAA}
 poblMD <- 6.778E+06
 poblCB <- 0.583E+06
 poblAS <- 1.019E+06
@@ -351,6 +395,10 @@ g <- g + labs(y = "Incidencia (Casos / 100.000 hab.)")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(IncidenciaCCAA$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
 g <- g + scale_color_manual(name="Incidencia diaria", 
                            values = c("Madrid"="blue", "Cantabria"="red", 
                                       "Asturias"="green", "Galicia"="orange"))
@@ -358,11 +406,13 @@ g <- g + geom_step(aes(y=IncidMD, color="Madrid"))
 g <- g + geom_step(aes(y=IncidCB, color="Cantabria"))
 g <- g + geom_step(aes(y=IncidAS, color="Asturias"))
 g <- g + geom_step(aes(y=IncidGA, color="Galicia"))
-## g <- g + theme(legend.justification = "center", legend.position = "right")
+g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
 g
 ```
 
-Por completar la información comparativa entre estas comunidades se adjunta también la incidencia acumulada en 14 días para estas áreas geográficas, junto con la correspondiente al conjunto del territorio nacional:
+### - Comparación de la IA14 por CCAA y nacional
+
+Con el objetivo de completar la información comparativa entre estas comunidades se adjunta también la incidencia acumulada en 14 días para estas áreas geográficas, junto con la correspondiente al conjunto del territorio nacional:
 
 ```{r Incidencias acumuladas 14 días CCAA + España}
 InicioPeriodo14 <- as.Date("2020-01-01")
@@ -398,6 +448,10 @@ g <- g + labs(y = "Incid. acum. 14 días / 100.000 hab.")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(IA14_CCAANac$Fecha,1), 
+                                   by="2 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
 g <- g + scale_color_manual(name = "IA14", 
                             values = c("Madrid"="blue", "Cantabria"="red", 
                                        "Asturias"="green", "Galicia"="orange", 
@@ -407,11 +461,11 @@ g <- g + geom_step(aes(y=IA14_CB, color="Cantabria"))
 g <- g + geom_step(aes(y=IA14_AS, color="Asturias"))
 g <- g + geom_step(aes(y=IA14_GA, color="Galicia"))
 g <- g + geom_step(aes(y=IA14_Nacional, color="Nacional"), size=0.75)
-## g <- g + theme(legend.justification = "center", legend.position = "right")
+g <- g + theme(legend.position=c(.025, .95), legend.justification=c("left", "top"))
 g
 ```
 
-## Evolución temporal de la tasa de variación de la incidencia acumulada en 14 días por cada 100.000 habitantes (IA14)
+## 9.- Evolución temporal de la tasa de variación de la incidencia acumulada en 14 días por cada 100.000 habitantes (IA14)
 
 En el siguiente gráfico lo que se representa es cómo varía la incidencia acumulada en 14 días por cada 100.000 habitantes (IA14) expresando la tasa de variación de esta incidencia como:
 
@@ -470,6 +524,10 @@ g <- g + labs(y = "Tasa de evolución de la IA14")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(tasaEvolIA14$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
 g <- g + scale_color_manual(name = "Tasa evolución IA14", 
                             values = c("Madrid"="blue", "Cantabria"="red", 
                                        "Asturias"="green", "Galicia"="orange", 
@@ -479,7 +537,7 @@ g <- g + geom_step(aes(y=tasaIA14_CB, color="Cantabria"))
 g <- g + geom_step(aes(y=tasaIA14_AS, color="Asturias"))
 g <- g + geom_step(aes(y=tasaIA14_GA, color="Galicia"))
 g <- g + geom_step(aes(y=tasaIA14_Nac, color="Nacional"), size=0.75)
-## g <- g + theme(legend.justification = "center", legend.position = "right")
+g <- g + theme(legend.position=c(.95, .95), legend.justification=c("right", "top"))
 g
 ```
 
@@ -487,9 +545,9 @@ Hay que hacer notar que, aunque la gráfica resultante tenga una apariencia simi
 
 Por otro lado es lógica esta similitud entre las gráficas de la tasa de evolución de la IA14 y la del número reproductivo básico instántaneo, ya que números reproductivos altos se corresponden con evoluciones crecientes en la incidencia de la enfermedad mientras que números reproductivos por debajo de 1 marcan evoluciones decrecientes de la incidencia en el número de casos.
 
-## Exceso de mortalidad
+## 10.- Datos de mortalidad
 
-Como último paso del análisis obtendremos cifras del exceso de mortalidad registrado en este año, presumiblemente achacable a la incidencia de la pandemia de la COVID-19. Los datos se han obtenido del enlace del **Instituto de Salud Carlos III**: <https://momo.isciii.es/public/momo/data>.
+Como siguiente paso del análisis estudiaremos la mortalidad registrada en el periodo de análisis. Los datos se han obtenido del enlace del **Instituto de Salud Carlos III**: <https://momo.isciii.es/public/momo/data>.
 
 ```{r Lectura de datos MoMo}
 DatosCompletosMoMo <- read.csv(file.path("data", "data.csv"))
@@ -509,22 +567,39 @@ La fecha y hora de descarga de los datos de mortalidad utilizados para la elabor
  
 Representemos en primer lugar la evolución del número de defunciones en comparación con las esperadas y su rango para los percentiles 1 y 99:
 
-```{r Gráfico mortalidad 2020}
+```{r Gráfico mortalidad}
 g <- ggplotCovid(DatosMoMo, aes(Fecha))
 g <- g + labs(y = "Defunciones diarias")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(DatosMoMo$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
 g <- g + scale_color_manual(name = "Defunciones", 
-                            values = c("Observadas"="black", "Esperadas"="blue"))
+                            values = c("Observadas"="black", "Esperadas"="blue", 
+                                       "Ajuste Obs."="red"))
 g <- g + geom_ribbon(aes(ymin=DefEsp_q01, ymax=DefEsp_q99), alpha=0.25, fill="blue")
 g <- g + geom_line(aes(y=DefObs, color="Observadas"))
 g <- g + geom_line(aes(y=DefEsp, color="Esperadas"))
-## g <- g + theme(legend.justification = "center", legend.position = "right")
+g <- g + geom_smooth(aes(y=DefObs, color="Ajuste Obs."), formula=y~x, method="loess", 
+                     span=0.1, method.args=list(degree=2), se=FALSE)
+g <- g + theme(legend.position=c(.95, .95), legend.justification=c("right", "top"))
 g
 ```
 
+Se ha agregado una línea de ajuste estadístico de las defunciones observadas para facilitar la visualización de la evolución de las mismas suavizando los dientes de sierra propios de las observaciones por tratarse de datos diarios.
+
 Como se puede ver, existe un periodo de mortalidad totalmente disparada a lo largo de los meses de marzo a mayo, con una punta con valores cercanos al triple de lo esperado, mientras que luego se aprecia otro periodo de desviación al alza, no tan acusado pero más prolongado en el tiempo y con una tendencia creciente a lo largo de varios meses antes de empezar a descender, que cubríría desde agosto hasta bastante avanzado diciembre.
+
+Antes de avanzar en el estudio cuantitativo del exceso de mortalidad haremos un primer análisis cualitativo comparando las curvas de evolución de la incidencia acumulada (IA14) con la curva de defunciones.
+
+Evidentemente lo que primero salta a la vista es la diferencia de proporción del pico de la primera ola con respecto a la segunda ola que ya hemos comentado anteriormente que en lo que respecta a la incidencia acumulada se debe a una subestimación por falta de pruebas diagnósticas, mientras que en lo que concierne a la mortalidad lo que parecen mostrar los datos que ha sucedido es que la primera ola tuvo un altísimo impacto en la población más sensible. No estábamos preparados, faltaba conocimiento y se reaccionó tarde, con lo que las consecuencias fueron desgraciadamente funestas. El confinamiento generalizado, aunque llegase tarde, era necesario y se mostró efectivo. Ahora bien, tanto a la vista de la incidencia acumulada como de la mortalidad no parece justificado de ningún punto que se prolongase por tanto tiempo como se hizo y el desescalamiento debería haber comenzado antes y haber sido con escalones más prolongados en el tiempo para de verdad haber mantenido un control efectivo de la propagación de la enfermedad.
+
+Como era de esperar, tan pronto se levantaron las medidas de restricción, la curva de incidencia empezó a crecer de forma constante. Curiosamente, contrario a lo que se esperaba, el inicio del nuevo curso escolar no tuvo un efecto negativo en la incidencia en el sentido de que ésta se disparase y de hecho en septiembre, primero disminuye el ritmo de crecimiento para luego incluso decrecer la incidencia en la segunda mitad de mes. Por otro lado, y también lógico y esperable, el crecimiento de la incidencia acumulada es acompañado por un crecimiento de la mortalidad que ya en verano supera el percentil 99 de las esperadas. La pregunta inevitable es por qué, con una incidencia creciente una mortalidad superior a la esperada y creciente, no se tomaron medidas antes por parte delas autoridades competentes.
+
+## 11.- Exceso de mortalidad
 
 Técnicamente se define "periodo de exceso de mortalidad" cuando se cumplen las siguientes condiciones:
 
@@ -542,12 +617,16 @@ g <- ggplotCovid(DatosMoMo, aes(Fecha))
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(DatosMoMo$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
 g <- g + labs(y = "Defun. Acumuladas desde 1/1/2020")
 g <- g + scale_color_manual(name = "Defunciones acumuladas", 
                             values = c("Observadas"="black", "Esperadas"="blue"))
-g <- g + geom_line(aes(y=AcumObs, color="Observadas"))
+g <- g + geom_line(aes(y=AcumObs, color="Observadas"), size = 0.75)
 g <- g + geom_line(aes(y=AcumEsp, color="Esperadas"))
-## g <- g + theme(legend.justification = "center", legend.position = "right")
+g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
 g
 ```
 
@@ -677,11 +756,11 @@ PeriodosExcesoUnido <- add_column(PeriodosExcesoUnido, "Porcentaje de exceso" =
 
 Aunque en el exceso de defunciones haya casos de fallecimiento no directamente imputables a la COVID-19, hay que asignar dichas muertes a la crisis del COVID-19. Si determinadas patologías no son debidamente atendidas en tiempo y forma por la sobrecarga del sistema sanitario provocada por la pandemia, los fallecimientos asociados a las mismas son por tanto atribuibles a la COVID-19 aunque el virus no haya sido la causa directa del fallecimiento correspondiente.
 
-El índice de mortalidad de la COVID-19 en España en 2020, medido como exceso de mortalidad atribuible directa o indrectamente a la COVID por cada mil habitantes, es de **`r format(TotalExcesoDefunciones/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**.
+El índice de mortalidad de la COVID-19 en España en el periodo de estudio, medido como exceso de mortalidad atribuible directa o indrectamente a la COVID por cada mil habitantes, es de **`r format(TotalExcesoDefunciones/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**.
 
 Antes de seguir avanzando no podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadisticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentmente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
 
-## Análisis por grupos de edad y sexo de las defunciones ocurridas durante la primera ola de la pandemia
+## 12.- Análisis por grupos de edad y sexo de las defunciones ocurridas durante la primera ola de la pandemia
 
 En este apartado haremos una somera disección de los fallecimientos producidos durante la primera ola de la pandemia por grupos de edad y por sexo. Tomaremos como periodo de referencia para el análisis de datos el correspondiente al primer periodo de exceso de defunciones tal y como se definió y determinó más arriba.
 
@@ -793,11 +872,11 @@ Coloquemos las tablas de porcentajes juntas una con la otra para que sea fácil 
 
 `r kable(Tabla2019Porc, align = "r", format.args = list(digits = 3, big.mark=".", decimal.mark=","))`
 
-Como se puede ver, con estos datos no es posible afirmar que la COVID-19 en términos de mortalidad haya afectado significativamente más a la población másculina que a la femenina y sólo se puede apreciar un desplazamiento de los fallecimientos hacia las franjas de edad mayores, algo que por otro lado es esperable puesto que la enfermedad afecta más severamente a las personas con patologías previas y éstas se encuentran por lógica entre los grupos de edad más avanzada.
+Como se puede ver, con estos datos no es posible afirmar que la COVID-19 en términos de mortalidad haya afectado significativamente más a la población másculina que a la femenina y sólo se puede apreciar un desplazamiento de los fallecimientos hacia las franjas de edad mayores, algo que por otro lado es esperable puesto que la enfermedad afecta más severamente a las personas con patologías previas y éstas se encuentran por lógica mayoritariamente entre los grupos de edad más avanzada.
 
 ....................
 
-## Referencias
+## Apéndice - Referencias
 
 (1) R Core Team (2020). R: A language and environment for statistical computing.
     R Foundation for Statistical Computing, Vienna, Austria. URL: 
