@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 ```{r Setup, include=FALSE}
-knitr::opts_chunk$set(echo=TRUE, fig.width=12, fig.height=6)
+knitr::opts_chunk$set(echo=FALSE, fig.width=12, fig.height=6)
 library(lubridate)
 library(knitr)
 library(tidyverse)
