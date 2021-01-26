@@ -1,0 +1,592 @@
+---
+title: "Análisis de la evolución de la incidencia de la COVID-19 en España desde el 1 de enero de 2020"
+subtitle: "Versión abreviada para seguimiento"
+author: "Juan Matorras Díaz-Caneja"
+date: "`r format(Sys.time(), '%d/%m/%Y')`"
+output: pdf_document
+---
+
+```{r Setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, fig.width=12, fig.height=6)
+library(lubridate)
+library(knitr)
+library(tidyverse)
+library(data.table)
+Sys.setlocale("LC_TIME", "es_ES.UTF-8")
+```
+
+## 1.- Introducción
+
+Esta es una versión abreviada de **AnalisisCovidEspaña.Rmd** donde se analizan con más detalle que aquí los datos de la incidencia de la COVID-19 en España desde el comienzo del año 2020.
+
+La razón de ser de esta versión es alejarse del ejercicio académico que representaba el documento original para condensar su contenido y centrarse en los datos más relevantes para el seguimiento de la incidencia de la enfermedad y de su mortalidad asociada.
+
+Por su propia esencia, éste es un documento vivo que además der ser puesto al día periódicamente con los nuevos datos disponibles, va sufriendo adiciones, modificaciones y correcciones de erratas. La última versión disponible de este documento y de los datos empleados en su elaboración se pueden encontrar en el repositorio de GitHub:  <https://github.com/JuanMatorras/Covid-19>.
+
+Los datos de partida son los publicados por el Gobierno de España a través de diferentes organismos públicos. Para información detallada sobre el origen de los datos, consúltese el documento principal mencionado del que éste deriva.
+
+## 2.- Proceso metodológico y software utilizado
+
+```{r Parámetros globales}
+## Funciones y parámetros globales
+ggplotCovid <- function(...){ggplot(...) + theme_bw(base_size=22)}
+poblESP <- 47.332E+06
+```
+
+El archivo de datos no ha sido sometido a ningún tipo de modificación o alteración previa y su manipulación en este análisis es el mínimo imprescindible para permitir el tratamiento de los datos y obtención de resultados.
+
+```{r Lectura de Datos y Simplificación de tabla}
+## Lectura de datos de origen
+DatosCompletos <- read.csv(file.path("data", "casos_diagnostico_ccaa.csv"))
+## Descartamos el método de detección (PCR, antígenos,...)
+DatosCCAAs <- DatosCompletos[, 1:3]
+## Adecuación formato fechas para su correcta lectura
+DatosCCAAs$fecha <- as.Date(DatosCCAAs$fecha, format = "%Y-%m-%d")
+## Agrupación de imformación de CCAA para datos a nivel nacional
+Datos <- DatosCCAAs %>% group_by(fecha) %>% summarise(num_casos = sum(num_casos), 
+                                                      .groups = 'drop')
+```
+
+La fecha y hora de descarga de los datos que han sido utilizados para la elaboración de las tablas y gráficos incluídos en este informe ha sido (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "casos_diagnostico_ccaa.csv"))`**
+
+El análisis se ha llevado a cabo utilizando el software libre para análisis estadístico **R**, versión `r getRversion()` (1), complementado con los siguientes paquetes: **lubridate** (2), **knitr** (3), **tydiverse** (4), **ggplot2** (5) y **data.table** (6).
+
+## 3.- Casos por meses y número total de casos detectados desde el inicio de 2020
+
+La evolución de número de casos notificados por meses se refleja en el gráfico que se muestra a continuación:
+
+```{r Incidencia Mensual}
+dfCasosMensuales <- Datos %>% group_by(Mes = floor_date(fecha, "month")) %>% 
+        summarize(Casos = sum(num_casos), .groups = "drop")
+TablaCasosMensuales <- data.frame("Mes" = format(dfCasosMensuales$Mes, "%b %Y"), 
+                                  "Casos" = format(dfCasosMensuales$Casos, 
+                                                   big.mark = ".", 
+                                                   decimal.mark = ","))
+TotalCasosOrigen <- sum(Datos$num_casos)
+PorcentajePoblacion <- paste(format(TotalCasosOrigen / poblESP *100, digits = 4, 
+    decimal.mark = ","), "%")
+d <- ggplotCovid(dfCasosMensuales, aes(Mes, Casos))
+d <- d + labs(y = "Casos mensuales")
+d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+d <- d + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(dfCasosMensuales$Mes,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+d + geom_col()
+```
+
+Correspondiente a los valores que se incluyen en la tabla siguiente:
+
+`r kable(TablaCasosMensuales, align = c("l", "r"))`
+
+El número total de casos acumulados desde el 1 de enero de 2020 hasta la fecha indicada en el punto anterior según los datos oficiales disponibles en ese momento ascienden a un total de **`r format(TotalCasosOrigen, big.mark = ".", decimal.mark = ",")`** personas.
+
+**Nota:** Existen datos discrepantes que están apareciendo en los datos correspondientes a enero de 2020 por errores en el registro de nuevos casos en enero de 2021 que se han asignado incorrectamente al año 2020.
+
+Considerando una población en España de **`r format(poblESP/1E+06, big.mark = ".", decimal.mark = ",")`** millones de personas según los datos publicados por el INE (Instituto Nacional de Estadística) correspondientes al inicio del año 2020, el porcentaje de contagio de la población es del **`r PorcentajePoblacion`** hasta la fecha. Insistimos en que, puesto que la incidencia de la enfermedad en los primeros meses de 2020 está por fuerza minusvalorada por la escasez de pruebas de diagnóstico, y no pudiendo olvidar que además tenémos el fenómeno de los casos de infección asintomáticos, el porcentaje de población afectada realmente es necesariamente más alto que el reflejado en este cálculo y es más que probable que sea del orden del doble. De hecho, para poder cubrir esta laguna y tener una idea más fiable del verdadero impacto de la enfermedad sobre el total de la pobllación están los estudios de sero-epidemiología que se han venido realizando desde junio de 2020 (<https://portalcne.isciii.es/enecovid19/>).
+
+## 4.- Casos diarios
+
+### - Curva epidémica de los casos notificados por días:
+
+```{r Incidencia Diaria}
+dfCasosDiarios <- data.frame(Fecha = Datos$fecha, Casos = Datos$num_casos)
+d <- ggplotCovid(dfCasosDiarios, aes(Fecha, Casos))
+d <- d + labs(y = "Casos diarios")
+d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+d <- d + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(dfCasosDiarios$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+d + geom_col()
+```
+
+## 5.- Evolución de la incidencia acumulada a lo largo de todo el periodo de análisis
+
+En el siguiente gráfico se representan las incidencias acumuladas por cada 100.000 habitantes correspondientes a periodos de 14 y 7 días:
+
+```{r Evolución de la Incidencia Acumulada}
+Fechas <- seq.Date(as.Date("2020-01-01"), by = "day", length.out = 
+                           length(dfCasosDiarios$Fecha))
+UltFecha <- Fechas[length(Fechas)]
+stopifnot(UltFecha == max(Datos$fecha))  ## Prueba interna consistencia datos
+
+## Inicialización de variables
+InicioPeriodo14 <- as.Date("2020-01-01")
+FinPeriodo14 <- InicioPeriodo14 + 13
+IncidAcum14 <- data.frame(Fecha=as.Date(character()), IA14=double()) 
+IA14aux <- as.double()
+InicioPeriodo7 <- as.Date("2020-01-01")
+FinPeriodo7 <- InicioPeriodo7 + 6
+IncidAcum7 <- data.frame(Fecha=as.Date(character()), IA7=double()) 
+IA7aux <- as.double()
+
+## Incidencia acumulada 14 días
+while (FinPeriodo14 <= UltFecha) {
+        IA14aux <- 0
+        Periodo14 <- seq.Date(
+                from = InicioPeriodo14,
+                to = FinPeriodo14,
+                by = "day")
+        DatosIA14 <- subset(Datos, fecha %in% Periodo14)
+        IA14aux <- sum(DatosIA14$num_casos)/poblESP*1E+05
+        IncidAcum14 <- add_row(IncidAcum14, Fecha = FinPeriodo14, IA14 = IA14aux)
+        InicioPeriodo14 <- InicioPeriodo14 + 1
+        FinPeriodo14 <- FinPeriodo14 + 1
+}
+
+## Incidencia acumulada 7 días
+while (FinPeriodo7 <= UltFecha) {
+        IA7aux <- 0
+        Periodo7 <- seq.Date(
+                from = InicioPeriodo7,
+                to = FinPeriodo7,
+                by = "day")
+        DatosIA7 <- subset(Datos, fecha %in% Periodo7)
+        IA7aux <- sum(DatosIA7$num_casos)/poblESP*1E+05
+        IncidAcum7 <- add_row(IncidAcum7, Fecha = FinPeriodo7, IA7 = IA7aux)
+        InicioPeriodo7 <- InicioPeriodo7 + 1
+        FinPeriodo7 <- FinPeriodo7 + 1
+}
+
+## Gráficos de Incidencia Acumulada superpuestos
+        ## Combinación de ambos data frames en IncidAcum7_14
+IncidAcum7_14 <- add_column(IncidAcum7, IA14=c(rep(0, 7), IncidAcum14$IA14))
+                ## 7 primeros valores deberían ser NA, 0 para evitar aviso
+g <- ggplotCovid(IncidAcum7_14, aes(Fecha))
+g <- g + labs(y = "Incidencia Acumulada 7/14 días")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(IncidAcum7_14$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+g <- g + scale_color_manual(name = "Incid. Acum.", 
+                           values = c("14 días" = "blue", "7 días" = "red"))
+g <- g + geom_step(aes(y=IA14, color = "14 días"))
+g <- g + geom_step(aes(y=IA7, color = "7 días"))
+g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
+g
+```
+
+Obviando el hecho ya comentado de la subestimación del primer pico de la ola por la baja realización de pruebas de diagnóstico, queda claro que, a pesar de que los medios de comunicación y, en consecuencia, la propia población general hablen de una tercera ola de la pandemia que arranca en el mes de diciembre, no habiendo bajado la IA14 de 200 sería más apropiado hablar de una segunda fase de la segunda ola puesto que ésta no se puede decir que llegó a estar bajo control. Si analizamos el impacto de la enfermedad desde el punto de vista de la mortalidad (ver apartado 9) sí que podríamos afirmar de algún modo que la segunda ola habría terminado a finales de diciembre, pero finalmente se ha fundido con el periodo de exceso posterior.
+
+## 6.- Comparación de la evolución del número de casos entre Madrid y otras CCAA
+
+### - Incidencia por cada 100.000 habitantes por CCAA
+
+En el siguiente gráfico se compara la evolución de la enfermedad entre comunidades muy diferentes: la Comunidad Autónoma de Madrid, Cantabria, Asturias, Galicia y Castilla y León, en términos de incidencia diaria (casos / 100.000 habitantes).
+
+Los datos de población en cada comunidad para el cálculo son disponibles en el momento en el INE  (<https://www.ine.es/dynInfo/Infografia/Territoriales/capitulo.html#!tabla>).
+
+```{r Casos por cada 100.000 habitantes en Cantabria, Madrid y otras CCAA}
+## ISO CCAA: Madrid= MD, Cantabria= CB, Asturias= AS, Galicia= GA, Castilla y León= CL
+CasosDiariosMD <- filter(DatosCCAAs, ccaa_iso == "MD")
+CasosDiariosMD <- subset (CasosDiariosMD, select = -ccaa_iso)
+CasosDiariosCB <- filter(DatosCCAAs, ccaa_iso == "CB")
+CasosDiariosCB <- subset (CasosDiariosCB, select = -ccaa_iso)
+CasosDiariosAS <- filter(DatosCCAAs, ccaa_iso == "AS")
+CasosDiariosAS <- subset (CasosDiariosAS, select = -ccaa_iso)
+CasosDiariosGA <- filter(DatosCCAAs, ccaa_iso == "GA")
+CasosDiariosGA <- subset (CasosDiariosGA, select = -ccaa_iso)
+CasosDiariosCL <- filter(DatosCCAAs, ccaa_iso == "CL")
+CasosDiariosCL <- subset (CasosDiariosCL, select = -ccaa_iso)
+CasosDiariosCCAA <- add_column(CasosDiariosMD, CasosDiariosCB$num_casos, 
+                               CasosDiariosAS$num_casos, CasosDiariosGA$num_casos, 
+                               CasosDiariosCL$num_casos)
+colnames(CasosDiariosCCAA) <- c("Fecha", "CasosMD", "CasosCB", "CasosAS", 
+                                "CasosGA", "CasosCL")
+poblMD <- 6.747E+06
+poblCB <- 0.582E+06
+poblAS <- 1.019E+06
+poblGA <- 2.702E+06
+poblCL <- 2.401E+06
+IncidenciaCCAA <- data.frame(CasosDiariosCCAA$Fecha, 
+                             CasosDiariosMD$num_casos/poblMD*1E+05, 
+                             CasosDiariosCB$num_casos/poblCB*1E+05, 
+                             CasosDiariosAS$num_casos/poblAS*1E+05, 
+                             CasosDiariosGA$num_casos/poblGA*1E+05,
+                             CasosDiariosCL$num_casos/poblCL*1E+05)
+colnames(IncidenciaCCAA) <- c("Fecha", "IncidMD", "IncidCB", "IncidAS", 
+                              "IncidGA", "IncidCL")
+g <- ggplotCovid(IncidenciaCCAA, aes(Fecha))
+g <- g + labs(y = "Incidencia (Casos / 100.000 hab.)")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), 
+                                   tail(IncidenciaCCAA$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+g <- g + scale_color_manual(name="Incidencia diaria", 
+                           values = c("Madrid"="blue", "Cantabria"="red", 
+                                      "Asturias"="deepskyblue", 
+                                      "Galicia"="seagreen", 
+                                      "Castilla y León"="magenta"))
+g <- g + geom_step(aes(y=IncidMD, color="Madrid"))
+g <- g + geom_step(aes(y=IncidCB, color="Cantabria"))
+g <- g + geom_step(aes(y=IncidAS, color="Asturias"))
+g <- g + geom_step(aes(y=IncidGA, color="Galicia"))
+g <- g + geom_step(aes(y=IncidCL, color="Castilla y León"))
+g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
+g
+```
+
+### - Comparación de la IA14 por CCAA y nacional
+
+Con el objetivo de completar la información comparativa entre estas comunidades se adjunta también la incidencia acumulada en 14 días para estas áreas geográficas, junto con la correspondiente al conjunto del territorio nacional:
+
+```{r Incidencias acumuladas 14 días CCAA + España}
+InicioPeriodo14 <- as.Date("2020-01-01")
+FinPeriodo14 <- InicioPeriodo14 + 13
+IA14_CCAA <- data.frame(Fecha=as.Date(character()), IA14_MD=double(), 
+                        IA14_CB=double(), IA14_AS=double(), IA14_GA=double(), 
+                        IA14_CL=double()) 
+IA14aux <- as.double()
+while (FinPeriodo14 <= UltFecha) {
+        IA14auxMD <- 0
+        IA14auxCB <- 0
+        IA14auxAS <- 0
+        IA14auxGA <- 0
+        IA14auxCL <- 0
+        Periodo14 <- seq.Date(
+                from = InicioPeriodo14,
+                to = FinPeriodo14,
+                by = "day")
+        DatosIA14_CCAA <- subset(IncidenciaCCAA, Fecha %in% Periodo14)
+        IA14auxMD <- sum(DatosIA14_CCAA$IncidMD)
+        IA14auxCB <- sum(DatosIA14_CCAA$IncidCB)
+        IA14auxAS <- sum(DatosIA14_CCAA$IncidAS)
+        IA14auxGA <- sum(DatosIA14_CCAA$IncidGA)
+        IA14auxCL <- sum(DatosIA14_CCAA$IncidCL)
+        IA14_CCAA <- add_row(IA14_CCAA, Fecha = FinPeriodo14, IA14_MD = IA14auxMD, 
+                             IA14_CB = IA14auxCB, IA14_AS = IA14auxAS, 
+                             IA14_GA = IA14auxGA, IA14_CL = IA14auxCL)
+        InicioPeriodo14 <- InicioPeriodo14 + 1
+        FinPeriodo14 <- FinPeriodo14 + 1
+}
+## Añadiendo columna con valores a nivel nacional
+IA14_CCAANac <- add_column(IA14_CCAA, IA14_Nacional=IncidAcum14$IA14)
+## Gráfico
+g <- ggplotCovid(IA14_CCAANac, aes(Fecha))
+g <- g + labs(y = "Incid. acum. 14 días / 100.000 hab.")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(IA14_CCAANac$Fecha,1), 
+                                   by="2 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+g <- g + scale_color_manual(name = "IA14", 
+                            values = c("Madrid"="blue", "Cantabria"="red", 
+                                       "Asturias"="deepskyblue", 
+                                       "Galicia"="seagreen", 
+                                       "Castilla y León"="magenta",
+                                       "Nacional" = "black"))
+g <- g + geom_step(aes(y=IA14_MD, color="Madrid"))
+g <- g + geom_step(aes(y=IA14_CB, color="Cantabria"))
+g <- g + geom_step(aes(y=IA14_AS, color="Asturias"))
+g <- g + geom_step(aes(y=IA14_GA, color="Galicia"))
+g <- g + geom_step(aes(y=IA14_CL, color="Castilla y León"))
+g <- g + geom_step(aes(y=IA14_Nacional, color="Nacional"), size=0.75)
+g <- g + theme(legend.position=c(.25, .95), legend.justification=c("left", "top"))
+g
+```
+
+## 7.- Evolución temporal de la tasa de variación de la incidencia acumulada en 14 días por cada 100.000 habitantes (IA14)
+
+En el siguiente gráfico lo que se representa es cómo varía la incidencia acumulada en 14 días por cada 100.000 habitantes (IA14) expresando la tasa de variación de esta incidencia como:
+
+tasaIA14(i) = (IA14(i)-IA14(i-1))/IA14(i-1)
+
+Se impone la condición para el cálculo de la tasa que IA14(i-1) sea mayor que cero para evitar obtener tasas de crecimiento infinitas por la división con denominador cero y la indeterminación 0/0 en los casos de secuencias de IA14 con valor 0 en los inicios de las series temporales.
+
+Como para el caso de incidencias acumuladas de valores muy bajos, pequeños cambios de la dicha incidencia representan cambios de tasa de evolución muy elevadas al ser el divisor pequeño, modificaremos la condición indicada en el párrafo anterior, exigiendo que la incidencia acumulada en el día anterior tenga como mínimo un valor de 3 casos por cada 100.000 habitantes.
+
+```{r Evolución tasa variación de la incidencia acumulada 14 días}
+InicioIA14 <- as.Date("2020-01-14")
+FechaTasa <- as.Date(character())
+FechaTasa <- InicioIA14 + 1
+tasaEvolIA14 <- data.frame(Fecha=as.Date(character()), tasaIA14_Nac=double(), 
+                           tasaIA14_MD=double(), tasaIA14_CB=double(), 
+                           tasaIA14_AS=double(), tasaIA14_GA=double(),
+                           tasaIA14_CL=double()) 
+while (FechaTasa <= UltFecha) {
+        IA14_CCAANac_Fecha <- subset(IA14_CCAANac, Fecha == FechaTasa)
+        IA14_CCAANac_FechaAnt <- subset(IA14_CCAANac, Fecha == FechaTasa-1)
+        if(IA14_CCAANac_FechaAnt$IA14_Nacional > 3) {
+                tasaIA14auxNac <- signif((IA14_CCAANac_Fecha$IA14_Nacional -
+                                  IA14_CCAANac_FechaAnt$IA14_Nacional)/
+                                  IA14_CCAANac_FechaAnt$IA14_Nacional, digits=4)
+        } else {tasaIA14auxNac <- 0}
+        if(IA14_CCAANac_FechaAnt$IA14_MD > 3) {
+                tasaIA14auxMD <- signif((IA14_CCAANac_Fecha$IA14_MD - 
+                                        IA14_CCAANac_FechaAnt$IA14_MD) / 
+                                        IA14_CCAANac_FechaAnt$IA14_MD, digits=4)
+        } else {tasaIA14auxMD <- 0}
+        if(IA14_CCAANac_FechaAnt$IA14_CB > 3) {
+                tasaIA14auxCB <- signif((IA14_CCAANac_Fecha$IA14_CB - 
+                                        IA14_CCAANac_FechaAnt$IA14_CB) / 
+                                        IA14_CCAANac_FechaAnt$IA14_CB, digits=4)
+        } else {tasaIA14auxCB <- 0}
+        if(IA14_CCAANac_FechaAnt$IA14_AS > 3) {
+                tasaIA14auxAS <- signif((IA14_CCAANac_Fecha$IA14_AS - 
+                                        IA14_CCAANac_FechaAnt$IA14_AS) / 
+                                        IA14_CCAANac_FechaAnt$IA14_AS, digits=4)
+        } else {tasaIA14auxAS <- 0}
+        if(IA14_CCAANac_FechaAnt$IA14_GA > 3) {
+                tasaIA14auxGA <- signif((IA14_CCAANac_Fecha$IA14_GA - 
+                                        IA14_CCAANac_FechaAnt$IA14_GA) / 
+                                        IA14_CCAANac_FechaAnt$IA14_GA, digits=4)
+        } else {tasaIA14auxGA <- 0}
+        if(IA14_CCAANac_FechaAnt$IA14_CL > 3) {
+                tasaIA14auxCL <- signif((IA14_CCAANac_Fecha$IA14_CL - 
+                                        IA14_CCAANac_FechaAnt$IA14_CL) / 
+                                        IA14_CCAANac_FechaAnt$IA14_CL, digits=4)
+        } else {tasaIA14auxCL <- 0}
+        tasaEvolIA14 <- add_row(tasaEvolIA14, Fecha = FechaTasa, 
+                                tasaIA14_Nac = tasaIA14auxNac, 
+                                tasaIA14_MD = tasaIA14auxMD, 
+                                tasaIA14_CB = tasaIA14auxCB, 
+                                tasaIA14_AS = tasaIA14auxAS,
+                                tasaIA14_GA = tasaIA14auxGA,
+                                tasaIA14_CL = tasaIA14auxCL)
+        FechaTasa <- FechaTasa + 1
+}
+## Gráfico
+g <- ggplotCovid(tasaEvolIA14, aes(Fecha))
+g <- g + labs(y = "Tasa de evolución de la IA14")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(tasaEvolIA14$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+g <- g + scale_color_manual(name = "Tasa evolución IA14", 
+                            values = c("Madrid"="blue", "Cantabria"="red", 
+                                       "Asturias"="deepskyblue", 
+                                       "Galicia"="seagreen", 
+                                       "Castilla y León"="magenta", 
+                                       "Nacional" = "black"))
+g <- g + geom_step(aes(y=tasaIA14_MD, color="Madrid"))
+g <- g + geom_step(aes(y=tasaIA14_CB, color="Cantabria"))
+g <- g + geom_step(aes(y=tasaIA14_AS, color="Asturias"))
+g <- g + geom_step(aes(y=tasaIA14_GA, color="Galicia"))
+g <- g + geom_step(aes(y=tasaIA14_GA, color="Castilla y León"))
+g <- g + geom_step(aes(y=tasaIA14_Nac, color="Nacional"), size=0.75)
+g <- g + theme(legend.position=c(.95, .95), legend.justification=c("right", "top"))
+g
+```
+
+Hay que hacer notar que, aunque la gráfica resultante tenga una apariencia similar a la del Número reproductivo básico instantáneo - Rt (número promedio de casos secundarios que cada sujeto infectado puede llegar a infectar en una etapa de tiempo (t)), no se trata de este indicador, cuyo cálculo es totalmente diferente al presentado aquí. El número reproductivo básico ínstantáneo calculado por el Instituto de Salud Carlos III puede ser encontrado en el siguiente enlace: <https://cnecovid.isciii.es/covid19/#ccaa>. Nótese que el nivel de referecia del número reproductivo es 1 mientras que para la tasa de evolución de la IA14 es 0.
+
+Por otro lado es lógica esta similitud entre las gráficas de la tasa de evolución de la IA14 y la del número reproductivo básico instántaneo, ya que números reproductivos altos se corresponden con evoluciones crecientes en la incidencia de la enfermedad mientras que números reproductivos por debajo de 1 marcan evoluciones decrecientes de la incidencia en el número de casos.
+
+## 8.- Datos de mortalidad
+
+Los datos se han obtenido del enlace del **Instituto de Salud Carlos III**: <https://momo.isciii.es/public/momo/data>.
+
+```{r Lectura de datos MoMo}
+DatosCompletosMoMo <- read.csv(file.path("data", "data.csv"))
+## Descartamos información de detalle de CCAA, sexos y grupos de edad
+DatosMoMo <- DatosCompletosMoMo[DatosCompletosMoMo$ambito == "nacional" & 
+                                DatosCompletosMoMo$cod_sexo == "all" & 
+                                DatosCompletosMoMo$cod_gedad == "all" & 
+                                DatosCompletosMoMo$fecha_defuncion > "2019-12-31", 
+                                c(9:10, 13:15)]
+colnames(DatosMoMo) <- c("Fecha", "DefObs", "DefEsp", "DefEsp_q01", "DefEsp_q99")
+DatosMoMo <- as.data.table(DatosMoMo)
+## Adecuación formato fechas para su correcta lectura
+DatosMoMo$Fecha <- as.Date(DatosMoMo$Fecha, format = "%Y-%m-%d")
+```
+
+La fecha y hora de descarga de los datos de mortalidad utilizados para la elaboración de los siguientes gráficos y tablas fue (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "data.csv"))`**
+ 
+Representemos en primer lugar la evolución del número de defunciones en comparación con las esperadas y su rango para los percentiles 1 y 99:
+
+```{r Gráfico mortalidad}
+g <- ggplotCovid(DatosMoMo, aes(Fecha))
+g <- g + labs(y = "Defunciones diarias")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(DatosMoMo$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+g <- g + scale_color_manual(name = "Defunciones", 
+                            values = c("Observadas"="black", "Esperadas"="blue", 
+                                       "Ajuste Obs."="red"))
+g <- g + geom_ribbon(aes(ymin=DefEsp_q01, ymax=DefEsp_q99), alpha=0.25, fill="blue")
+g <- g + geom_line(aes(y=DefObs, color="Observadas"))
+g <- g + geom_line(aes(y=DefEsp, color="Esperadas"))
+g <- g + geom_smooth(aes(y=DefObs, color="Ajuste Obs."), formula=y~x, method="loess", 
+                     span=0.1, method.args=list(degree=2), se=FALSE)
+g <- g + theme(legend.position=c(.95, .95), legend.justification=c("right", "top"))
+g
+```
+
+Se ha agregado una línea de ajuste estadístico de las defunciones observadas para facilitar la visualización de la evolución de las mismas suavizando los dientes de sierra propios de las observaciones por tratarse de datos diarios.
+
+## 9.- Exceso de mortalidad
+
+Técnicamente se define "periodo de exceso de mortalidad" cuando se cumplen las siguientes condiciones:
+
+* Se observa al menos dos días consecutivos con defunciones observadas por encima del percentil 99 de las estimadas.
+* La fecha de inicio del periodo es el primer día con las defunciones observadas por encima de las estimadas.
+* La fecha de fin del periodo es el último día con las defunciones observadas por encima de las estimadas.
+* Si entre la fecha de fin de un periodo y la fecha de inicio del siguiente hay dos días, se unifican ambos periodos, tomando la fecha de inicio del primer periodo y fecha de fin del último.
+
+Con estas premisas podemos aislar los periodos en los que se han producido dichas circunstancias y calcular el exceso de defunciones durante esos lapsos de tiempo concretos.
+
+```{r Cifras relevantes defunciones}
+DatosMoMo[,AcumObs := cumsum(DefObs)]
+DatosMoMo[,AcumEsp := cumsum(DefEsp)]
+## Acumulados totales desde inicio de 2020
+TotalDefAcumObs <- last(DatosMoMo$AcumObs)
+TotalDefAcumEsp <- round(last(DatosMoMo$AcumEsp))
+TotalExcesoDef <- TotalDefAcumObs - TotalDefAcumEsp
+PorcentajeExcesoDef <- round(TotalExcesoDef/TotalDefAcumEsp*100, 1)
+## Acumulados desde inicio de 2020 hasta 21 de junio de 2020
+DefAcumObs21jun <- DatosMoMo$AcumObs[DatosMoMo$Fecha == "2020-06-21"]
+DefAcumEsp21jun <- round(DatosMoMo$AcumEsp[DatosMoMo$Fecha == "2020-06-21"])
+ExcesoDef21jun <- DefAcumObs21jun - DefAcumEsp21jun
+PorcentExcesoDef21jun <- round(ExcesoDef21jun/DefAcumEsp21jun*100, 1)
+```
+
+Más interesentante resulta la comparación directa de las cifras acumuladas hasta la fecha. En este caso tenemos, con los datos disponibles, una total de **`r format(TotalDefAcumObs, big.mark = ".", decimal.mark = ",")`** defunciones observadas y **`r format(TotalDefAcumEsp, big.mark = ".", decimal.mark = ",")`** defunciones esperadas, resultando un exceso de **`r format(TotalExcesoDef, big.mark = ".", decimal.mark = ",")`** defunciones. Expresando dicho exceso en términos porcentuales, nos encontramos con un **`r format(PorcentajeExcesoDef, decimal.mark = ",")` %** más fallecimientos de los esperados.
+
+Retomando la senda de la ortodoxia y aplicando ahora sí los criterios técnicos "oficiales" que presentábamos más arriba que definen los periodos de exceso de mortalidad, las fechas que delimitan el principio y final de los periodos de exceso padecidos a lo largo de 2020 son (fechas en formato aaaa-mm-dd):
+
+```{r Fechas delimitación periodos exceso}
+## Columnas auxiliares variables buleanas
+DatosMoMo[, MQEsp := DefObs>DefEsp]
+DatosMoMo[, MQEsp99_2dias := {DefObs>DefEsp_q99 & lag(DefObs)>lag(DefEsp_q99)}]
+## Determinar inicio y fin de periodos de exceso
+PeriodosExceso <- data.table("Inicio"=as.Date(character()), "Fin"=as.Date(character()))
+i <- as.integer(1)
+while (i < nrow(DatosMoMo)) { ## Recorrer tabla
+        if (DatosMoMo$MQEsp99_2dias[i] == TRUE) { ## Encontrar dos días > quant99(Esp)
+                j <- as.integer(1)
+                while (DatosMoMo$MQEsp[i-j] == TRUE && DatosMoMo$MQEsp[i-j-1] == TRUE)
+                {j <- j + 1}
+                PeriodosExcesoInicioN <- as.Date(DatosMoMo$Fecha[i-j])
+                for (k in 0:(nrow(DatosMoMo)-i)) {
+                        if (i + k == nrow(DatosMoMo)) {
+                                PeriodosExcesoFinN <- as.Date(DatosMoMo$Fecha[i+k])
+                                PeriodosExceso <- add_row(PeriodosExceso, 
+                                                          Inicio = PeriodosExcesoInicioN,
+                                                          Fin = PeriodosExcesoFinN)
+                                break
+                        }
+                        if (DatosMoMo$MQEsp[i+k] == TRUE && 
+                                DatosMoMo$MQEsp[i+k+1] == FALSE) {
+                                PeriodosExcesoFinN <- as.Date(DatosMoMo$Fecha[i+k])
+                                PeriodosExceso <- add_row(PeriodosExceso, 
+                                                          Inicio = PeriodosExcesoInicioN,
+                                                          Fin = PeriodosExcesoFinN)
+                                i <- i + k
+                                break
+                        }
+                }
+        }
+        i <- i + 1
+}
+## Unir periodos de exceso próximos
+PeriodosExcesoUnido <- data.table("Inicio"=as.Date(character()), 
+                                  "Fin"=as.Date(character()))
+n <- as.integer(1)
+while (n <= nrow(PeriodosExceso)) {
+        PeriodosExcesoUnidoInicioN <- PeriodosExceso$Inicio[n]
+        while (((PeriodosExceso$Inicio[n+1] - PeriodosExceso$Fin[n]) <= 3) &
+               n < nrow(PeriodosExceso)) {n <- n + 1}
+        PeriodosExcesoUnidoFinN <- PeriodosExceso$Fin[n]
+        PeriodosExcesoUnido <- add_row(PeriodosExcesoUnido, 
+                                       Inicio = PeriodosExcesoUnidoInicioN, 
+                                       Fin = PeriodosExcesoUnidoFinN)
+        n <- n + 1
+}
+```
+
+* Antes de unificar periodos de exceso próximos:
+
+`r kable(PeriodosExceso, align = "c")`
+
+* Después de unificar los periodos de exceso cercanos (<= 2 días intermedios):
+
+`r kable(PeriodosExcesoUnido, align = "c")`
+
+```{r Determinación de los excesos de defunciones en los periodos}
+## Excesos de defunciones durante los periodos de exceso
+PeriodoExcesoN <- as.Date(character())
+ExcesoDefunciones <- data.table("Exceso"=integer())
+DefuncionesEsperadas <- data.table("Esperadas"=integer())
+for (i in 1:nrow(PeriodosExcesoUnido)) {
+        PeriodoExcesoN <- seq.Date(
+                from = as.Date(PeriodosExcesoUnido$Inicio[i]), 
+                to = as.Date(PeriodosExcesoUnido$Fin[i]), 
+                by = "day")
+        DatosMoMoPeriodoN <- subset(DatosMoMo, Fecha %in% PeriodoExcesoN)
+        ExcesoDefunciones <- add_row(ExcesoDefunciones, "Exceso" = 
+                                     (sum(DatosMoMoPeriodoN$DefObs)
+                                     -round(sum(DatosMoMoPeriodoN$DefEsp))))
+        DefuncionesEsperadas <- add_row(DefuncionesEsperadas, "Esperadas"=
+                                     round(sum(DatosMoMoPeriodoN$DefEsp)))
+}
+PeriodosExcesoUnido <- add_column(PeriodosExcesoUnido, "Exceso de defunciones" = 
+                                          ExcesoDefunciones$Exceso)
+TotalExcesoDefunciones <- sum(PeriodosExcesoUnido$"Exceso de defunciones")
+```
+
+Los excesos de defunciones en estos `r nrow(PeriodosExcesoUnido)` periodos son:
+
+`r kable(PeriodosExcesoUnido, align = "c", format.args = list(big.mark=".", decimal.mark=","))`
+
+Siendo el total agregado de exceso de defunciones de **`r format(TotalExcesoDefunciones, big.mark = ".", decimal.mark = ",")`** personas.
+
+Los excesos en términos porcentuales con respecto a las esperadas, pero circunscritos exclusivamente al propio periodo de exceso de defunciones y dejando fuera el resto de la serie temporal:
+
+```{r Porcentaje Exceso defunciones en periodos de exceso}
+PeriodosExcesoUnido <- add_column(PeriodosExcesoUnido, "Porcentaje de exceso" = 
+                                  round((PeriodosExcesoUnido$"Exceso de defunciones" /
+                                  DefuncionesEsperadas$Esperadas * 100), 1))
+```
+
+`r kable(PeriodosExcesoUnido, align = "c", format.args = list(big.mark=".", decimal.mark=","))`
+
+Aunque en el exceso de defunciones haya casos de fallecimiento no directamente imputables a la COVID-19, hay que asignar dichas muertes a la crisis del COVID-19. Si determinadas patologías no son debidamente atendidas en tiempo y forma por la sobrecarga del sistema sanitario provocada por la pandemia, los fallecimientos asociados a las mismas son por tanto atribuibles a la COVID-19 aunque el virus no haya sido la causa directa del fallecimiento correspondiente.
+
+El índice de mortalidad de la COVID-19 en España en el periodo de estudio, medido como exceso de mortalidad atribuible directa o indrectamente a la COVID por cada mil habitantes, es de **`r format(TotalExcesoDefunciones/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**.
+
+No podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadisticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentmente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
+
+....................
+
+## Apéndice - Referencias
+
+(1) R Core Team (2020). R: A language and environment for statistical computing.
+    R Foundation for Statistical Computing, Vienna, Austria. URL: 
+    https://www.R-project.org/
+
+(2) Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with 
+    lubridate. Journal of Statistical Software, 40(3), 1-25. URL: 
+    http://www.jstatsoft.org/v40/i03/
+    
+(3) Yihui Xie (2020). knitr: A General-Purpose Package for Dynamic Report 
+    Generation in R. R package version 1.30.
+
+(4) Wickham et al., (2019). Welcome to the tidyverse. Journal of Open
+    Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
+    
+(5) H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New
+    York, 2016.
+    
+(6) Matt Dowle and Arun Srinivasan (2020). data.table: Extension of `data.frame`. 
+    R package version 1.13.2. https://CRAN.R-project.org/package=data.table
