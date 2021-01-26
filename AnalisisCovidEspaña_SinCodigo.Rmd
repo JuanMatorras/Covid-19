@@ -20,18 +20,18 @@ Este es un ejercicio básico de análisis de los datos de la incidencia de la CO
 
 Hay que matizar que, si bien este estudio empezó cubriendo únicamente fechas dentro de 2020, por la propia duración de la pandemia, el alcance del mismo se ha extendido para acomodar los datos disponibles correspondientes ya al año 2021.
 
-Por su propia esencia, éste es un documento vivo que además der ser puesto al día periódicamente con los nuevos datos disponibles, va sufriendo adiciones, modificaciones y corrección de erratas. La última versión disponible de este documento y de los datos empleados en su elaboración se pueden encontrar en el repositorio de GitHub:  <https://github.com/JuanMatorras/Covid-19>.
+Por su propia esencia, éste es un documento vivo que además der ser puesto al día periódicamente con los nuevos datos disponibles, va sufriendo adiciones, modificaciones y correcciones de erratas. La última versión disponible de este documento y de los datos empleados en su elaboración se pueden encontrar en el repositorio de GitHub:  <https://github.com/JuanMatorras/Covid-19>.
 
 Los datos de partida son los publicados por el Gobierno de España. Estos datos estaban durante 2020 disponibles directamente a través la web **datos.gob.es** en el enlace: <https://datos.gob.es/es/catalogo/e05070101-evolucion-de-enfermedad-por-el-coronavirus-covid-19>. Con el cambio de año este enlace ha quedado anulado y es necesario acudir a: <https://cnecovid.isciii.es/covid19/#documentación-y-datos> donde se encuentran los nuevos enlaces de descarga. En este caso el archivo utilizado es el de datos por CCAA: <https://cnecovid.isciii.es/covid19/resources/casos_diagnostico_ccaa.csv>
 
-El grueso del informe se centra sobre los totales en España agregando los datos disponibles por Comunidades Autónomas, aunque también se muestran información de la incidencia en las CCAA de Madrid, Cantabria, Asturias y Galicia. La razón de la selección de estas comunidades y no otras responde a consideraciones personales y no obedece a ningún criterio técnico.
+El grueso del informe se centra sobre los totales en España agregando los datos disponibles por Comunidades Autónomas, aunque también se muestran información de la incidencia en las CCAA de Madrid, Cantabria, Asturias, Galicia y Castilla y León. La razón de la selección de estas comunidades y no otras responde a consideraciones personales y no obedece a ningún criterio técnico.
 
 ## 2.- Proceso metodológico y software utilizado
 
 ```{r Parámetros globales}
 ## Funciones y parámetros globales
 ggplotCovid <- function(...){ggplot(...) + theme_bw(base_size=22)}
-poblESP <- 47.33E+06
+poblESP <- 47.332E+06
 ```
 
 El archivo de datos no ha sido sometido a ningún tipo de modificación o alteración previa y su manipulación en este análisis es el mínimo imprescindible para permitir el tratamiento de los datos y obtención de resultados.
@@ -48,7 +48,7 @@ Datos <- DatosCCAAs %>% group_by(fecha) %>% summarise(num_casos = sum(num_casos)
                                                       .groups = 'drop')
 ```
 
-La fecha y hora de descarga de los datos que han sido utilizados para las tablas y gráficos incluídos en este informe ha sido (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "casos_diagnostico_ccaa.csv"))`**
+La fecha y hora de descarga de los datos que han sido utilizados para la elaboración de las tablas y gráficos incluídos en este informe ha sido (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "casos_diagnostico_ccaa.csv"))`**
 
 El análisis se ha llevado a cabo utilizando el software libre para análisis estadístico **R**, versión `r getRversion()`. (1)
 
@@ -59,7 +59,9 @@ Se ha hecho uso también de los paquetes complementarios:
 * **tydiverse** por los paquetes que incluye para ayudar en la extracción de la información y los gráficos mejorados de **ggplot2**. (4) y (5)
 * **data.table** con el objeto de manipular las tablas más eficientemente. (6)  
 
-Nota: La codificación empleada en los datos fuente para la identificación de comunidades autónomas y provincias se corresponde con la ISO 3166-2:ES. La correspondencia entre dicha codificación y la comunidad autónoma o provincia referida puede ser consultada, entre otras fuentes, en: <https://es.wikipedia.org/wiki/ISO_3166-2:ES>
+Nota 1: La codificación empleada en los datos fuente para la identificación de comunidades autónomas y provincias se corresponde con la ISO 3166-2:ES. La correspondencia entre dicha codificación y la comunidad autónoma o provincia referida puede ser consultada, entre otras fuentes, en: <https://es.wikipedia.org/wiki/ISO_3166-2:ES>
+
+Nota 2: En algunos puntos la programación puede ser lejos de óptima, en primera instancia por mi falta de fluidez en la programación con R por estar en proceso de aprendizaje, pero también afectado significativamente por la manera en la que se ha ido construyendo este documento, que empezó siendo algo sencillo, muy limitado en su alcance, pero que ha sufrido diversas ampliaciones en su alcance. Un ejemplo claro son los apartados donde se compara la información entre CCAA. En primera instancia empezaron siendo sólo dos comunidades y por eso se programó de una manera, que se debería haber modificado cuando la lista de CCAA consideradas empezó a hacerse larga.
 
 ## 3.- Casos por meses y número total de casos detectados desde el inicio de 2020
 
@@ -153,7 +155,7 @@ d <- d + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(dfCasosDiariosAcu
 d + geom_col()
 ```
 
-El resultado de esta desgregación de datos, o más estrictamente de la ausencia de agregación de datos puestos que los datos de partida son diarios, es la aparición de dientes de sierra que son simplemente el reflejo del descenso en el número de pruebs realizadas en fines de semana y festivos en comparación con los realizados en días laborables.
+El resultado de esta desagregación de datos, o más estrictamente de la ausencia de agregación de los mismos, puesto que los datos de partida son diarios, es la aparición de dientes de sierra que son simplemente el reflejo del descenso en el número de pruebs realizadas en fines de semana y festivos en comparación con los realizados en días laborables.
 
 ## 6.- Detalle del número de casos en los primeros meses de 2020
 
@@ -339,10 +341,10 @@ Pasando ahora al análisis de la evolución de ambos indicadores y obviando el h
 
 ### - Casos reportados por CCAA
 
-En el siguiente gráfico se compara la evolución de la enfermedad entre comunidades muy diferentes, la Comunidad Autónoma de Madrid, Cantabria, Asturias y Galicia:
+En el siguiente gráfico se compara la evolución de la enfermedad entre comunidades muy diferentes, la Comunidad Autónoma de Madrid, Cantabria, Asturias, Galicia y Castilla y León:
 
-```{r Casos reportados en Madrid, Cantabria, Asturias y Galicia}
-## ISO CCAA: Madrid = MD, Cantabria = CB, Asturias = AS, Galicia = GA
+```{r Casos reportados en Madrid, Cantabria, Asturias, Galicia y Castilla y León}
+## ISO CCAA: Madrid= MD, Cantabria= CB, Asturias= AS, Galicia= GA, Castilla y León= CL
 CasosDiariosMD <- filter(DatosCCAAs, ccaa_iso == "MD")
 CasosDiariosMD <- subset (CasosDiariosMD, select = -ccaa_iso)
 CasosDiariosCB <- filter(DatosCCAAs, ccaa_iso == "CB")
@@ -351,9 +353,13 @@ CasosDiariosAS <- filter(DatosCCAAs, ccaa_iso == "AS")
 CasosDiariosAS <- subset (CasosDiariosAS, select = -ccaa_iso)
 CasosDiariosGA <- filter(DatosCCAAs, ccaa_iso == "GA")
 CasosDiariosGA <- subset (CasosDiariosGA, select = -ccaa_iso)
+CasosDiariosCL <- filter(DatosCCAAs, ccaa_iso == "CL")
+CasosDiariosCL <- subset (CasosDiariosCL, select = -ccaa_iso)
 CasosDiariosCCAA <- add_column(CasosDiariosMD, CasosDiariosCB$num_casos, 
-                               CasosDiariosAS$num_casos, CasosDiariosGA$num_casos)
-colnames(CasosDiariosCCAA) <- c("Fecha", "CasosMD", "CasosCB", "CasosAS", "CasosGA")
+                               CasosDiariosAS$num_casos, CasosDiariosGA$num_casos, 
+                               CasosDiariosCL$num_casos)
+colnames(CasosDiariosCCAA) <- c("Fecha", "CasosMD", "CasosCB", "CasosAS", 
+                                "CasosGA", "CasosCL")
 g <- ggplotCovid(CasosDiariosCCAA, aes(Fecha)) + labs(y = "Casos reportados")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
@@ -364,11 +370,14 @@ g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(CasosDiariosCCAA$
                       date_labels = "%b %Y")
 g <- g + scale_color_manual(name="Casos diarios", 
                            values = c("Madrid"="blue", "Cantabria"="red", 
-                                      "Asturias"="green", "Galicia"="orange"))
+                                      "Asturias"="deepskyblue", 
+                                      "Galicia"="seagreen", 
+                                      "Castilla y León"="magenta"))
 g <- g + geom_step(aes(y=CasosMD, color="Madrid"))
 g <- g + geom_step(aes(y=CasosCB, color="Cantabria"))
 g <- g + geom_step(aes(y=CasosAS, color="Asturias"))
 g <- g + geom_step(aes(y=CasosGA, color="Galicia"))
+g <- g + geom_step(aes(y=CasosCL, color="Castilla y León"))
 g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
 g
 ```
@@ -380,32 +389,39 @@ Como es lógico, los datos no son comparables en términos absolutos por la gran
 Para solventar este problema representamos ahora número de casos por cada 100.000 habitantes, con los datos de población en cada comunidad disponibles en el momento en el INE  (<https://www.ine.es/dynInfo/Infografia/Territoriales/capitulo.html#!tabla>).
 
 ```{r Casos por cada 100.000 habitantes en Cantabria, Madrid y otras CCAA}
-poblMD <- 6.778E+06
-poblCB <- 0.583E+06
+poblMD <- 6.747E+06
+poblCB <- 0.582E+06
 poblAS <- 1.019E+06
-poblGA <- 2.700E+06
+poblGA <- 2.702E+06
+poblCL <- 2.401E+06
 IncidenciaCCAA <- data.frame(CasosDiariosCCAA$Fecha, 
                              CasosDiariosMD$num_casos/poblMD*1E+05, 
                              CasosDiariosCB$num_casos/poblCB*1E+05, 
                              CasosDiariosAS$num_casos/poblAS*1E+05, 
-                             CasosDiariosGA$num_casos/poblGA*1E+05)
-colnames(IncidenciaCCAA) <- c("Fecha", "IncidMD", "IncidCB", "IncidAS", "IncidGA")
+                             CasosDiariosGA$num_casos/poblGA*1E+05,
+                             CasosDiariosCL$num_casos/poblCL*1E+05)
+colnames(IncidenciaCCAA) <- c("Fecha", "IncidMD", "IncidCB", "IncidAS", 
+                              "IncidGA", "IncidCL")
 g <- ggplotCovid(IncidenciaCCAA, aes(Fecha))
 g <- g + labs(y = "Incidencia (Casos / 100.000 hab.)")
 g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
                                                       big.mark=".", 
                                                       decimal.mark=",")})
-g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(IncidenciaCCAA$Fecha,1), 
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), 
+                                   tail(IncidenciaCCAA$Fecha,1), 
                                    by="3 months"), 
                       date_minor_breaks = "1 month", 
                       date_labels = "%b %Y")
 g <- g + scale_color_manual(name="Incidencia diaria", 
                            values = c("Madrid"="blue", "Cantabria"="red", 
-                                      "Asturias"="green", "Galicia"="orange"))
+                                      "Asturias"="deepskyblue", 
+                                      "Galicia"="seagreen", 
+                                      "Castilla y León"="magenta"))
 g <- g + geom_step(aes(y=IncidMD, color="Madrid"))
 g <- g + geom_step(aes(y=IncidCB, color="Cantabria"))
 g <- g + geom_step(aes(y=IncidAS, color="Asturias"))
 g <- g + geom_step(aes(y=IncidGA, color="Galicia"))
+g <- g + geom_step(aes(y=IncidCL, color="Castilla y León"))
 g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
 g
 ```
@@ -418,13 +434,15 @@ Con el objetivo de completar la información comparativa entre estas comunidades
 InicioPeriodo14 <- as.Date("2020-01-01")
 FinPeriodo14 <- InicioPeriodo14 + 13
 IA14_CCAA <- data.frame(Fecha=as.Date(character()), IA14_MD=double(), 
-                        IA14_CB=double(), IA14_AS=double(), IA14_GA=double()) 
+                        IA14_CB=double(), IA14_AS=double(), IA14_GA=double(), 
+                        IA14_CL=double()) 
 IA14aux <- as.double()
 while (FinPeriodo14 <= UltFecha) {
         IA14auxMD <- 0
         IA14auxCB <- 0
         IA14auxAS <- 0
         IA14auxGA <- 0
+        IA14auxCL <- 0
         Periodo14 <- seq.Date(
                 from = InicioPeriodo14,
                 to = FinPeriodo14,
@@ -434,9 +452,10 @@ while (FinPeriodo14 <= UltFecha) {
         IA14auxCB <- sum(DatosIA14_CCAA$IncidCB)
         IA14auxAS <- sum(DatosIA14_CCAA$IncidAS)
         IA14auxGA <- sum(DatosIA14_CCAA$IncidGA)
+        IA14auxCL <- sum(DatosIA14_CCAA$IncidCL)
         IA14_CCAA <- add_row(IA14_CCAA, Fecha = FinPeriodo14, IA14_MD = IA14auxMD, 
                              IA14_CB = IA14auxCB, IA14_AS = IA14auxAS, 
-                             IA14_GA = IA14auxGA)
+                             IA14_GA = IA14auxGA, IA14_CL = IA14auxCL)
         InicioPeriodo14 <- InicioPeriodo14 + 1
         FinPeriodo14 <- FinPeriodo14 + 1
 }
@@ -454,14 +473,17 @@ g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(IA14_CCAANac$Fech
                       date_labels = "%b %Y")
 g <- g + scale_color_manual(name = "IA14", 
                             values = c("Madrid"="blue", "Cantabria"="red", 
-                                       "Asturias"="green", "Galicia"="orange", 
+                                       "Asturias"="deepskyblue", 
+                                       "Galicia"="seagreen", 
+                                       "Castilla y León"="magenta",
                                        "Nacional" = "black"))
 g <- g + geom_step(aes(y=IA14_MD, color="Madrid"))
 g <- g + geom_step(aes(y=IA14_CB, color="Cantabria"))
 g <- g + geom_step(aes(y=IA14_AS, color="Asturias"))
 g <- g + geom_step(aes(y=IA14_GA, color="Galicia"))
+g <- g + geom_step(aes(y=IA14_CL, color="Castilla y León"))
 g <- g + geom_step(aes(y=IA14_Nacional, color="Nacional"), size=0.75)
-g <- g + theme(legend.position=c(.025, .95), legend.justification=c("left", "top"))
+g <- g + theme(legend.position=c(.25, .95), legend.justification=c("left", "top"))
 g
 ```
 
@@ -473,15 +495,16 @@ tasaIA14(i) = (IA14(i)-IA14(i-1))/IA14(i-1)
 
 Se impone la condición para el cálculo de la tasa que IA14(i-1) sea mayor que cero para evitar obtener tasas de crecimiento infinitas por la división con denominador cero y la indeterminación 0/0 en los casos de secuencias de IA14 con valor 0 en los inicios de las series temporales.
 
-Como para el caso de incidencias acumuladas de valores muy bajor, pequeños cambios de la dicha incidencia representan cambios de tasa de evolución muy elevadas al ser el divisor pequeño, modificaremos la condición indicada en el párrafo anterior, exigiendo que la incidencia acumulada en el día anterior tenga como mínimo un valor de 3 casos por cada 100.000 habitantes.
+Como para el caso de incidencias acumuladas de valores muy bajos, pequeños cambios de la dicha incidencia representan cambios de tasa de evolución muy elevadas al ser el divisor pequeño, modificaremos la condición indicada en el párrafo anterior, exigiendo que la incidencia acumulada en el día anterior tenga como mínimo un valor de 3 casos por cada 100.000 habitantes.
 
 ```{r Evolución tasa variación de la incidencia acumulada 14 días}
 InicioIA14 <- as.Date("2020-01-14")
 FechaTasa <- as.Date(character())
 FechaTasa <- InicioIA14 + 1
 tasaEvolIA14 <- data.frame(Fecha=as.Date(character()), tasaIA14_Nac=double(), 
-                                tasaIA14_MD=double(), tasaIA14_CB=double(), 
-                                tasaIA14_AS=double(), tasaIA14_GA=double()) 
+                           tasaIA14_MD=double(), tasaIA14_CB=double(), 
+                           tasaIA14_AS=double(), tasaIA14_GA=double(),
+                           tasaIA14_CL=double()) 
 while (FechaTasa <= UltFecha) {
         IA14_CCAANac_Fecha <- subset(IA14_CCAANac, Fecha == FechaTasa)
         IA14_CCAANac_FechaAnt <- subset(IA14_CCAANac, Fecha == FechaTasa-1)
@@ -510,12 +533,18 @@ while (FechaTasa <= UltFecha) {
                                         IA14_CCAANac_FechaAnt$IA14_GA) / 
                                         IA14_CCAANac_FechaAnt$IA14_GA, digits=4)
         } else {tasaIA14auxGA <- 0}
+        if(IA14_CCAANac_FechaAnt$IA14_CL > 3) {
+                tasaIA14auxCL <- signif((IA14_CCAANac_Fecha$IA14_CL - 
+                                        IA14_CCAANac_FechaAnt$IA14_CL) / 
+                                        IA14_CCAANac_FechaAnt$IA14_CL, digits=4)
+        } else {tasaIA14auxCL <- 0}
         tasaEvolIA14 <- add_row(tasaEvolIA14, Fecha = FechaTasa, 
                                 tasaIA14_Nac = tasaIA14auxNac, 
                                 tasaIA14_MD = tasaIA14auxMD, 
                                 tasaIA14_CB = tasaIA14auxCB, 
                                 tasaIA14_AS = tasaIA14auxAS,
-                                tasaIA14_GA = tasaIA14auxGA)
+                                tasaIA14_GA = tasaIA14auxGA,
+                                tasaIA14_CL = tasaIA14auxCL)
         FechaTasa <- FechaTasa + 1
 }
 ## Gráfico
@@ -530,12 +559,15 @@ g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(tasaEvolIA14$Fech
                       date_labels = "%b %Y")
 g <- g + scale_color_manual(name = "Tasa evolución IA14", 
                             values = c("Madrid"="blue", "Cantabria"="red", 
-                                       "Asturias"="green", "Galicia"="orange", 
+                                       "Asturias"="deepskyblue", 
+                                       "Galicia"="seagreen", 
+                                       "Castilla y León"="magenta", 
                                        "Nacional" = "black"))
 g <- g + geom_step(aes(y=tasaIA14_MD, color="Madrid"))
 g <- g + geom_step(aes(y=tasaIA14_CB, color="Cantabria"))
 g <- g + geom_step(aes(y=tasaIA14_AS, color="Asturias"))
 g <- g + geom_step(aes(y=tasaIA14_GA, color="Galicia"))
+g <- g + geom_step(aes(y=tasaIA14_GA, color="Castilla y León"))
 g <- g + geom_step(aes(y=tasaIA14_Nac, color="Nacional"), size=0.75)
 g <- g + theme(legend.position=c(.95, .95), legend.justification=c("right", "top"))
 g
