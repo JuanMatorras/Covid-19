@@ -22,7 +22,7 @@ Hay que matizar que, si bien este estudio empezó cubriendo únicamente fechas d
 
 Por su propia esencia, éste es un documento vivo que además der ser puesto al día periódicamente con los nuevos datos disponibles, va sufriendo adiciones, modificaciones y correcciones de erratas. La última versión disponible de este documento y de los datos empleados en su elaboración se pueden encontrar en el repositorio de GitHub:  <https://github.com/JuanMatorras/Covid-19>.
 
-Los datos de partida son los publicados por el Gobierno de España. Estos datos estaban durante 2020 disponibles directamente a través la web **datos.gob.es** en el enlace: <https://datos.gob.es/es/catalogo/e05070101-evolucion-de-enfermedad-por-el-coronavirus-covid-19>. Con el cambio de año este enlace ha quedado anulado y es necesario acudir a: <https://cnecovid.isciii.es/covid19/#documentación-y-datos> donde se encuentran los nuevos enlaces de descarga. En este caso el archivo utilizado es el de datos por CCAA: <https://cnecovid.isciii.es/covid19/resources/casos_diagnostico_ccaa.csv>
+Los datos de partida son los publicados por el Gobierno de España. Estos datos estaban durante 2020 disponibles directamente a través la web **datos.gob.es** en el enlace: <https://datos.gob.es/es/catalogo/e05070101-evolucion-de-enfermedad-por-el-coronavirus-covid-19>. Con el cambio de año este enlace ha quedado anulado y es necesario acudir a: <https://cnecovid.isciii.es/covid19/#documentación-y-datos> donde se encuentran los nuevos enlaces de descarga. En este caso el archivo utilizado es el de datos por CCAA: <https://cnecovid.isciii.es/covid19/resources/casos_tecnica_ccaa.csv>
 
 El grueso del informe se centra sobre los totales en España agregando los datos disponibles por Comunidades Autónomas, aunque también se muestran información de la incidencia en las CCAA de Madrid, Cantabria, Asturias, Galicia y Castilla y León. La razón de la selección de estas comunidades y no otras responde a consideraciones personales y no obedece a ningún criterio técnico.
 
@@ -38,7 +38,7 @@ El archivo de datos no ha sido sometido a ningún tipo de modificación o altera
 
 ```{r Lectura de Datos y Simplificación de tabla}
 ## Lectura de datos de origen
-DatosCompletos <- read.csv(file.path("data", "casos_diagnostico_ccaa.csv"))
+DatosCompletos <- read.csv(file.path("data", "casos_tecnica_ccaa.csv"))
 ## Descartamos el método de detección (PCR, antígenos,...)
 DatosCCAAs <- DatosCompletos[, 1:3]
 ## Adecuación formato fechas para su correcta lectura
@@ -48,7 +48,7 @@ Datos <- DatosCCAAs %>% group_by(fecha) %>% summarise(num_casos = sum(num_casos)
                                                       .groups = 'drop')
 ```
 
-La fecha y hora de descarga de los datos que han sido utilizados para la elaboración de las tablas y gráficos incluídos en este informe ha sido (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "casos_diagnostico_ccaa.csv"))`**
+La fecha y hora de descarga de los datos que han sido utilizados para la elaboración de las tablas y gráficos incluídos en este informe ha sido (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "casos_tecnica_ccaa.csv"))`**
 
 El análisis se ha llevado a cabo utilizando el software libre para análisis estadístico **R**, versión `r getRversion()`. (1)
 
