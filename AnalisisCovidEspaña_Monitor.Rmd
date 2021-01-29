@@ -119,36 +119,32 @@ stopifnot(UltFecha == max(Datos$fecha))  ## Prueba interna consistencia datos
 InicioPeriodo14 <- as.Date("2020-01-01")
 FinPeriodo14 <- InicioPeriodo14 + 13
 IncidAcum14 <- data.frame(Fecha=as.Date(character()), IA14=double()) 
-IA14aux <- as.double()
 InicioPeriodo7 <- as.Date("2020-01-01")
 FinPeriodo7 <- InicioPeriodo7 + 6
 IncidAcum7 <- data.frame(Fecha=as.Date(character()), IA7=double()) 
-IA7aux <- as.double()
 
 ## Incidencia acumulada 14 días
 while (FinPeriodo14 <= UltFecha) {
-        IA14aux <- 0
         Periodo14 <- seq.Date(
                 from = InicioPeriodo14,
                 to = FinPeriodo14,
                 by = "day")
         DatosIA14 <- subset(Datos, fecha %in% Periodo14)
-        IA14aux <- sum(DatosIA14$num_casos)/poblESP*1E+05
-        IncidAcum14 <- add_row(IncidAcum14, Fecha = FinPeriodo14, IA14 = IA14aux)
+        IncidAcum14 <- add_row(IncidAcum14, Fecha = FinPeriodo14, 
+                               IA14 = sum(DatosIA14$num_casos)/poblESP*1E+05)
         InicioPeriodo14 <- InicioPeriodo14 + 1
         FinPeriodo14 <- FinPeriodo14 + 1
 }
 
 ## Incidencia acumulada 7 días
 while (FinPeriodo7 <= UltFecha) {
-        IA7aux <- 0
         Periodo7 <- seq.Date(
                 from = InicioPeriodo7,
                 to = FinPeriodo7,
                 by = "day")
         DatosIA7 <- subset(Datos, fecha %in% Periodo7)
-        IA7aux <- sum(DatosIA7$num_casos)/poblESP*1E+05
-        IncidAcum7 <- add_row(IncidAcum7, Fecha = FinPeriodo7, IA7 = IA7aux)
+        IncidAcum7 <- add_row(IncidAcum7, Fecha = FinPeriodo7, 
+                              IA7 = sum(DatosIA7$num_casos)/poblESP*1E+05)
         InicioPeriodo7 <- InicioPeriodo7 + 1
         FinPeriodo7 <- FinPeriodo7 + 1
 }
@@ -248,26 +244,18 @@ FinPeriodo14 <- InicioPeriodo14 + 13
 IA14_CCAA <- data.frame(Fecha=as.Date(character()), IA14_MD=double(), 
                         IA14_CB=double(), IA14_AS=double(), IA14_GA=double(), 
                         IA14_CL=double()) 
-IA14aux <- as.double()
 while (FinPeriodo14 <= UltFecha) {
-        IA14auxMD <- 0
-        IA14auxCB <- 0
-        IA14auxAS <- 0
-        IA14auxGA <- 0
-        IA14auxCL <- 0
         Periodo14 <- seq.Date(
                 from = InicioPeriodo14,
                 to = FinPeriodo14,
                 by = "day")
         DatosIA14_CCAA <- subset(IncidenciaCCAA, Fecha %in% Periodo14)
-        IA14auxMD <- sum(DatosIA14_CCAA$IncidMD)
-        IA14auxCB <- sum(DatosIA14_CCAA$IncidCB)
-        IA14auxAS <- sum(DatosIA14_CCAA$IncidAS)
-        IA14auxGA <- sum(DatosIA14_CCAA$IncidGA)
-        IA14auxCL <- sum(DatosIA14_CCAA$IncidCL)
-        IA14_CCAA <- add_row(IA14_CCAA, Fecha = FinPeriodo14, IA14_MD = IA14auxMD, 
-                             IA14_CB = IA14auxCB, IA14_AS = IA14auxAS, 
-                             IA14_GA = IA14auxGA, IA14_CL = IA14auxCL)
+        IA14_CCAA <- add_row(IA14_CCAA, Fecha = FinPeriodo14, 
+                             IA14_MD = sum(DatosIA14_CCAA$IncidMD), 
+                             IA14_CB = sum(DatosIA14_CCAA$IncidCB), 
+                             IA14_AS = sum(DatosIA14_CCAA$IncidAS), 
+                             IA14_GA = sum(DatosIA14_CCAA$IncidGA), 
+                             IA14_CL = sum(DatosIA14_CCAA$IncidCL))
         InicioPeriodo14 <- InicioPeriodo14 + 1
         FinPeriodo14 <- FinPeriodo14 + 1
 }
@@ -461,7 +449,7 @@ ExcesoDef21jun <- DefAcumObs21jun - DefAcumEsp21jun
 PorcentExcesoDef21jun <- round(ExcesoDef21jun/DefAcumEsp21jun*100, 1)
 ```
 
-Más interesentante resulta la comparación directa de las cifras acumuladas hasta la fecha. En este caso tenemos, con los datos disponibles, una total de **`r format(TotalDefAcumObs, big.mark = ".", decimal.mark = ",")`** defunciones observadas y **`r format(TotalDefAcumEsp, big.mark = ".", decimal.mark = ",")`** defunciones esperadas, resultando un exceso de **`r format(TotalExcesoDef, big.mark = ".", decimal.mark = ",")`** defunciones. Expresando dicho exceso en términos porcentuales, nos encontramos con un **`r format(PorcentajeExcesoDef, decimal.mark = ",")` %** más fallecimientos de los esperados.
+Antes de pasar a ello hagamos una comparación directa de las cifras acumuladas hasta la fecha. En este caso tenemos un total de **`r format(TotalDefAcumObs, big.mark = ".", decimal.mark = ",")`** defunciones observadas y **`r format(TotalDefAcumEsp, big.mark = ".", decimal.mark = ",")`** defunciones esperadas, resultando un exceso de **`r format(TotalExcesoDef, big.mark = ".", decimal.mark = ",")`** defunciones. Expresando dicho exceso en términos porcentuales, nos encontramos con un **`r format(PorcentajeExcesoDef, decimal.mark = ",")` %** más fallecimientos de los esperados.
 
 Retomando la senda de la ortodoxia y aplicando ahora sí los criterios técnicos "oficiales" que presentábamos más arriba que definen los periodos de exceso de mortalidad, las fechas que delimitan el principio y final de los periodos de exceso padecidos a lo largo de 2020 son (fechas en formato aaaa-mm-dd):
 
@@ -484,6 +472,7 @@ while (i < nrow(DatosMoMo)) { ## Recorrer tabla
                                 PeriodosExceso <- add_row(PeriodosExceso, 
                                                           Inicio = PeriodosExcesoInicioN,
                                                           Fin = PeriodosExcesoFinN)
+                                i <- i + k
                                 break
                         }
                         if (DatosMoMo$MQEsp[i+k] == TRUE && 
@@ -499,7 +488,7 @@ while (i < nrow(DatosMoMo)) { ## Recorrer tabla
         }
         i <- i + 1
 }
-## Unir periodos de exceso próximos
+## Unir periodos de exceso próximos (<= 2 días intermedios)
 PeriodosExcesoUnido <- data.table("Inicio"=as.Date(character()), 
                                   "Fin"=as.Date(character()))
 n <- as.integer(1)
@@ -563,9 +552,9 @@ PeriodosExcesoUnido <- add_column(PeriodosExcesoUnido, "Porcentaje de exceso" =
 
 Aunque en el exceso de defunciones haya casos de fallecimiento no directamente imputables a la COVID-19, hay que asignar dichas muertes a la crisis del COVID-19. Si determinadas patologías no son debidamente atendidas en tiempo y forma por la sobrecarga del sistema sanitario provocada por la pandemia, los fallecimientos asociados a las mismas son por tanto atribuibles a la COVID-19 aunque el virus no haya sido la causa directa del fallecimiento correspondiente.
 
-El índice de mortalidad de la COVID-19 en España en el periodo de estudio, medido como exceso de mortalidad atribuible directa o indrectamente a la COVID por cada mil habitantes, es de **`r format(TotalExcesoDefunciones/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**.
+El índice de mortalidad de la COVID-19 en España en el periodo de estudio, medido como exceso de mortalidad atribuible directa o indirectamente a la COVID por cada mil habitantes, es de **`r format(TotalExcesoDefunciones/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**.
 
-No podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadisticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentmente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
+No podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadísticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentemente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
 
 ....................
 
