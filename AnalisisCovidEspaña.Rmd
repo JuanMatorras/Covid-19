@@ -61,7 +61,9 @@ Se ha hecho uso también de los paquetes complementarios:
 
 Nota 1: La codificación empleada en los datos fuente para la identificación de comunidades autónomas y provincias se corresponde con la ISO 3166-2:ES. La correspondencia entre dicha codificación y la comunidad autónoma o provincia referida puede ser consultada, entre otras fuentes, en: <https://es.wikipedia.org/wiki/ISO_3166-2:ES>
 
-Nota 2: En algunos puntos la programación puede ser lejos de óptima, en primera instancia por mi falta de fluidez en la programación con R por estar en proceso de aprendizaje, pero también afectado significativamente por la manera en la que se ha ido construyendo este documento, que empezó siendo algo sencillo, muy limitado en su alcance, pero que ha sufrido diversas ampliaciones en su alcance. Un ejemplo claro son los apartados donde se compara la información entre CCAA. En primera instancia empezaron siendo sólo dos comunidades y por eso se programó de una manera, que se debería haber modificado cuando la lista de CCAA consideradas empezó a hacerse larga.
+Nota 2: En algunos puntos la programación puede ser lejos de óptima, en primera instancia por mi falta de fluidez en la programación con R por estar en proceso de aprendizaje, pero también afectado significativamente por la manera en la que se ha ido construyendo este documento, que empezó siendo algo sencillo, muy limitado en su alcance, pero que ha sufrido múltiples ampliaciones en su alcance en sucesivas etapas y nunca siguiendo un guión definido. Un ejemplo claro son los apartados donde se compara la información entre CCAA. En primera instancia empezaron siendo sólo dos comunidades y por eso se programó de una manera, que se debería haber modificado cuando la lista empezó a hacerse larga a medida que incorporaba nuevas CCAA a los análisis comparativos.
+
+Nota 3: Hay que llamar la atención sobre la naturaleza de los datos, los cuales proceden de la agregación de las aportaciones desde las CCAA al sistema RENAVE. Esto resulta en que los datos de casos de fechas recientes no están completos y esto hace que todas las gráficas con desagregación diaria o variables derivadas, como la incidencia acumulada, presenten siempre un tramo descendente en su extremo final, con independencia de si realmente el progreso de la enfermedad es de expansión o de contracción.
 
 ## 3.- Casos por meses y número total de casos detectados desde el inicio de 2020
 
@@ -276,36 +278,33 @@ stopifnot(UltFecha == max(Datos$fecha))  ## Prueba interna consistencia datos
 InicioPeriodo14 <- as.Date("2020-01-01")
 FinPeriodo14 <- InicioPeriodo14 + 13
 IncidAcum14 <- data.frame(Fecha=as.Date(character()), IA14=double()) 
-IA14aux <- as.double()
+# IA14aux <- as.double()
 InicioPeriodo7 <- as.Date("2020-01-01")
 FinPeriodo7 <- InicioPeriodo7 + 6
 IncidAcum7 <- data.frame(Fecha=as.Date(character()), IA7=double()) 
-IA7aux <- as.double()
 
 ## Incidencia acumulada 14 días
 while (FinPeriodo14 <= UltFecha) {
-        IA14aux <- 0
         Periodo14 <- seq.Date(
                 from = InicioPeriodo14,
                 to = FinPeriodo14,
                 by = "day")
         DatosIA14 <- subset(Datos, fecha %in% Periodo14)
-        IA14aux <- sum(DatosIA14$num_casos)/poblESP*1E+05
-        IncidAcum14 <- add_row(IncidAcum14, Fecha = FinPeriodo14, IA14 = IA14aux)
+        IncidAcum14 <- add_row(IncidAcum14, Fecha = FinPeriodo14, 
+                               IA14 = sum(DatosIA14$num_casos)/poblESP*1E+05)
         InicioPeriodo14 <- InicioPeriodo14 + 1
         FinPeriodo14 <- FinPeriodo14 + 1
 }
 
 ## Incidencia acumulada 7 días
 while (FinPeriodo7 <= UltFecha) {
-        IA7aux <- 0
         Periodo7 <- seq.Date(
                 from = InicioPeriodo7,
                 to = FinPeriodo7,
                 by = "day")
         DatosIA7 <- subset(Datos, fecha %in% Periodo7)
-        IA7aux <- sum(DatosIA7$num_casos)/poblESP*1E+05
-        IncidAcum7 <- add_row(IncidAcum7, Fecha = FinPeriodo7, IA7 = IA7aux)
+        IncidAcum7 <- add_row(IncidAcum7, Fecha = FinPeriodo7, 
+                              IA7 = sum(DatosIA7$num_casos)/poblESP*1E+05)
         InicioPeriodo7 <- InicioPeriodo7 + 1
         FinPeriodo7 <- FinPeriodo7 + 1
 }
@@ -436,26 +435,18 @@ FinPeriodo14 <- InicioPeriodo14 + 13
 IA14_CCAA <- data.frame(Fecha=as.Date(character()), IA14_MD=double(), 
                         IA14_CB=double(), IA14_AS=double(), IA14_GA=double(), 
                         IA14_CL=double()) 
-IA14aux <- as.double()
 while (FinPeriodo14 <= UltFecha) {
-        IA14auxMD <- 0
-        IA14auxCB <- 0
-        IA14auxAS <- 0
-        IA14auxGA <- 0
-        IA14auxCL <- 0
         Periodo14 <- seq.Date(
                 from = InicioPeriodo14,
                 to = FinPeriodo14,
                 by = "day")
         DatosIA14_CCAA <- subset(IncidenciaCCAA, Fecha %in% Periodo14)
-        IA14auxMD <- sum(DatosIA14_CCAA$IncidMD)
-        IA14auxCB <- sum(DatosIA14_CCAA$IncidCB)
-        IA14auxAS <- sum(DatosIA14_CCAA$IncidAS)
-        IA14auxGA <- sum(DatosIA14_CCAA$IncidGA)
-        IA14auxCL <- sum(DatosIA14_CCAA$IncidCL)
-        IA14_CCAA <- add_row(IA14_CCAA, Fecha = FinPeriodo14, IA14_MD = IA14auxMD, 
-                             IA14_CB = IA14auxCB, IA14_AS = IA14auxAS, 
-                             IA14_GA = IA14auxGA, IA14_CL = IA14auxCL)
+        IA14_CCAA <- add_row(IA14_CCAA, Fecha = FinPeriodo14, 
+                             IA14_MD = sum(DatosIA14_CCAA$IncidMD), 
+                             IA14_CB = sum(DatosIA14_CCAA$IncidCB), 
+                             IA14_AS = sum(DatosIA14_CCAA$IncidAS), 
+                             IA14_GA = sum(DatosIA14_CCAA$IncidGA), 
+                             IA14_CL = sum(DatosIA14_CCAA$IncidCL))
         InicioPeriodo14 <- InicioPeriodo14 + 1
         FinPeriodo14 <- FinPeriodo14 + 1
 }
@@ -662,7 +653,7 @@ g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"
 g
 ```
 
-Como podíamos esperar, esta gráfica no aporta gran valor a la hora de la interpretación de la información, más allá del hecho de que las defunciones observadas se distancian de las esperadas de forma muy visible a lo largo de los meses de marzo a mayo de 2020, y que dicho distanciamento se vuelve a incrementar, ya a menor ritmo, a partir del mes de agosto, aunque se aprecia que vuelve a repuntar ligeramente en noviembre de 2020.
+Como podíamos esperar, esta gráfica no aporta gran valor a la hora de la interpretación de la información, más allá del hecho de que las defunciones observadas se distancian de las esperadas de forma muy visible a lo largo de los meses de marzo a mayo de 2020, y que dicho distanciamiento se vuelve a incrementar, ya a menor ritmo, a partir del mes de agosto, aunque se aprecia que vuelve a repuntar ligeramente en noviembre de 2020, con la punta de la segunda ola, y otro repunte más en enero con la tercera ola de la pandemia.
 
 ```{r Cifras relevantes defunciones}
 ## Acumulados totales desde inicio de 2020
@@ -677,7 +668,7 @@ ExcesoDef21jun <- DefAcumObs21jun - DefAcumEsp21jun
 PorcentExcesoDef21jun <- round(ExcesoDef21jun/DefAcumEsp21jun*100, 1)
 ```
 
-Más interesentante resulta la comparación directa de las cifras acumuladas hasta la fecha. En este caso tenemos, con los datos disponibles, una total de **`r format(TotalDefAcumObs, big.mark = ".", decimal.mark = ",")`** defunciones observadas y **`r format(TotalDefAcumEsp, big.mark = ".", decimal.mark = ",")`** defunciones esperadas, resultando un exceso de **`r format(TotalExcesoDef, big.mark = ".", decimal.mark = ",")`** defunciones. Expresando dicho exceso en términos porcentuales, nos encontramos con un **`r format(PorcentajeExcesoDef, decimal.mark = ",")` %** más fallecimientos de los esperados.
+Más interesante resulta la comparación directa de las cifras acumuladas hasta la fecha. En este caso tenemos, con los datos disponibles, un total de **`r format(TotalDefAcumObs, big.mark = ".", decimal.mark = ",")`** defunciones observadas y **`r format(TotalDefAcumEsp, big.mark = ".", decimal.mark = ",")`** defunciones esperadas, resultando un exceso de **`r format(TotalExcesoDef, big.mark = ".", decimal.mark = ",")`** defunciones. Expresando dicho exceso en términos porcentuales, nos encontramos con un **`r format(PorcentajeExcesoDef, decimal.mark = ",")` %** más fallecimientos de los esperados.
 
 Por afán de completar la visión de la evolución de estas variables, presentamos a continuación esos mismos valores en la fecha en la que se levantó el estado de alarma, 21 de junio de 2020, buscando una fecha en lo que podríamos denominar **"final de la primera ola"**, que no ***"la derrota de la pandemia"*** (sic):
 
@@ -707,6 +698,7 @@ while (i < nrow(DatosMoMo)) { ## Recorrer tabla
                                 PeriodosExceso <- add_row(PeriodosExceso, 
                                                           Inicio = PeriodosExcesoInicioN,
                                                           Fin = PeriodosExcesoFinN)
+                                i <- i + k
                                 break
                         }
                         if (DatosMoMo$MQEsp[i+k] == TRUE && 
@@ -722,7 +714,7 @@ while (i < nrow(DatosMoMo)) { ## Recorrer tabla
         }
         i <- i + 1
 }
-## Unir periodos de exceso próximos
+## Unir periodos de exceso próximos (<= 2 días intermedios)
 PeriodosExcesoUnido <- data.table("Inicio"=as.Date(character()), 
                                   "Fin"=as.Date(character()))
 n <- as.integer(1)
@@ -788,11 +780,110 @@ PeriodosExcesoUnido <- add_column(PeriodosExcesoUnido, "Porcentaje de exceso" =
 
 Aunque en el exceso de defunciones haya casos de fallecimiento no directamente imputables a la COVID-19, hay que asignar dichas muertes a la crisis del COVID-19. Si determinadas patologías no son debidamente atendidas en tiempo y forma por la sobrecarga del sistema sanitario provocada por la pandemia, los fallecimientos asociados a las mismas son por tanto atribuibles a la COVID-19 aunque el virus no haya sido la causa directa del fallecimiento correspondiente.
 
-El índice de mortalidad de la COVID-19 en España en el periodo de estudio, medido como exceso de mortalidad atribuible directa o indrectamente a la COVID por cada mil habitantes, es de **`r format(TotalExcesoDefunciones/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**.
+El índice de mortalidad de la COVID-19 en España en el periodo de estudio, medido como exceso de mortalidad atribuible directa o indirectamente a la COVID por cada mil habitantes, es de **`r format(TotalExcesoDefunciones/poblESP*1e3, digits = 3, big.mark = ".", decimal.mark = ",")`**.
 
-Antes de seguir avanzando no podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadisticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentmente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
+Antes de seguir avanzando no podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadísticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentemente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
 
-## 12.- Análisis por grupos de edad y sexo de las defunciones ocurridas durante la primera ola de la pandemia
+## 12.- Mortalidad acumulada en 14 días y comparación con la Incidencia acumulada en 14 días
+
+Al hablar de la incidencia diaria de la pandemia veíamos que su valor se veía claramente influenciado por el menor número de pruebas realizadas durante los fines de semana y festivos, generando unos evidentes dientes de sierra a la hora de su representación gráfica. Aunque la razón de la variabilidad en las defunciones observadas no es la misma, recurriremos a una transformación similar, sumando defunciones en periodos móviles de 14 días y dividiendo la cantidad resultante por la población en España, obteniendo una variable que denominaremos mortalidad acumulada en 14 días por cada millón de habitantes (MA14).
+
+Representando gráficamente la MA14 de las defunciones observadas y la MA14 de las defunciones esperadas, observamos que mantienen la semejanza con los datos de origen, con la lógica distorsión de escala y desplazamiento temporal, y que se ha conseguido el deseado efecto de suavizar los dientes de sierra en lo que respecta a las defunciones observadas.
+
+```{r Mortalidades acumuladas en 14 días}
+## Inicialización de variables
+InicioPeriodo14 <- as.Date("2020-01-01")
+FinPeriodo14 <- InicioPeriodo14 + 13
+MortAcum14 <- data.frame(Fecha=as.Date(character()), MA14obs=double(), 
+                         MA14esp=double())
+
+## Mortalidades acumuladas en 14 días - observada y esperada
+while (FinPeriodo14 <= UltFecha) {
+        Periodo14 <- seq.Date(
+                from = InicioPeriodo14,
+                to = FinPeriodo14,
+                by = "day")
+        DatosMA14 <- subset(DatosMoMo, Fecha %in% Periodo14)
+        MortAcum14 <- add_row(MortAcum14, Fecha = FinPeriodo14, 
+                              MA14obs = sum(DatosMA14$DefObs)/poblESP*1E06, 
+                              MA14esp = sum(DatosMA14$DefEsp)/poblESP*1E06)
+        InicioPeriodo14 <- InicioPeriodo14 + 1
+        FinPeriodo14 <- FinPeriodo14 + 1
+}
+
+## Gráfico - Mortalidades acumuladas 14 días - observada y esperada
+g <- ggplotCovid(MortAcum14, aes(Fecha))
+g <- g + labs(y = "Def. Acum. 14 días / 1.000.000 hab.")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(MortAcum14$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+g <- g + scale_color_manual(name = "MA14", 
+                            values = c("observada" = "red", "esperada" = "blue"))
+g <- g + geom_step(aes(y=MA14obs, color = "observada"))
+g <- g + geom_step(aes(y=MA14esp, color = "esperada"))
+g <- g + theme(legend.position=c(.95, .95), legend.justification=c("right", "top"))
+g
+```
+
+Ahora bien, lo que realmente nos interesa es comparar la diferencia entre estas variables de mortalidades acumuladas, observadas menos esperadas, que denominaremos exceso de mortalidad acumulada (EMA14), con la de la incidencia acumulada (IA14). Veamos qué pasa cuando escalamos ambas, EMA14 e IA14, y las representamos en el mismo gráfico:
+
+```{r IA14 vs EMA14}
+## Preparando tabla de datos
+IA14vsEMA14 <- cbind(IncidAcum14, EMA14 = MortAcum14$MA14obs - MortAcum14$MA14esp)
+## Gráfico - IA14 vs EMA14
+g <- ggplotCovid(IA14vsEMA14, aes(Fecha))
+g <- g + labs(y = "")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), 
+                                   tail(IA14vsEMA14$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+g <- g + scale_color_manual(name = "Incidencia/Exceso Mortalidad 14 días", 
+                            values = c("Incidencia - IA14" = "blue", 
+                                       "Exceso Mort. - EMA14" = "red"))
+g <- g + geom_step(aes(y = scale(IA14), color = "Incidencia - IA14"))
+g <- g + geom_step(aes(y = scale(EMA14), color = "Exceso Mort. - EMA14"))
+g <- g + theme(legend.position=c(.65, .95), legend.justification=c("center", "top"))
+g
+```
+
+Al comparar ambas gráficas vuelve a resaltar el que se invierta la proporción entre el pico de la primera ola y el de la segunda, resultado de la escasez de ensayos en la primera mitad de 2020, sin poder menoscabar las mejoras en los tratamientos de la enfermedad. En vez de intentar estimar la IA14 durante es primera mitad de año con conjeturas falibles, lo que haremos como siguiente paso es simplemente descartar el periodo desde el 1 de enero de 2020 hasta el 30 de junio de 2020 y analizar los datos correspondientes a fechas posteriores.
+
+```{r IA14 vs EMA14 desde 01/07/2020}
+## Preparando tabla de datos
+IA14vsEMA14s2 <- subset(IA14vsEMA14, Fecha > as.Date("2020-06-30"))
+## Gráfico - IA14 vs EMA14 desde 01/07/2020
+g <- ggplotCovid(IA14vsEMA14s2, aes(Fecha))
+g <- g + labs(y = "")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-07-01"), 
+                                   tail(IA14vsEMA14s2$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+g <- g + scale_color_manual(name = "Incidencia/Exceso Mortalidad 14 días", 
+                            values = c("Incidencia - IA14" = "blue", 
+                                       "Exc. Mort. - EMA14" = "red"))
+g <- g + geom_step(aes(y = scale(IA14), color = "Incidencia - IA14"))
+g <- g + geom_step(aes(y = scale(EMA14), color = "Exc. Mort. - EMA14"))
+g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
+g
+```
+
+La correlación que ya se adivinaba con datos desde el 1 de enero de 2020 se hace mucho más evidente con la serie arrancando el 1 de julio de 2020, además de verificarse el esperado decalaje en el tiempo entre los picos de ambas variables, alcanzándose el máximo de exceso de mortalidad después de que la incidencia acumulada empiece ya a decrecer y el inicio del crecimiento en el exceso de mortalidad se produce con demora respecto al inicio del ascenso en la incidencia, por el tiempo de desarrollo de la enfermedad hasta llegar a consecuencias fatales.
+
+Nota: No perdemos de vista en este apartado y en el siguiente que estamos comparando una variable que sí que está directamente correlacionada con el virus responsable de la COVID-19, porque son identificaciones del virus mediante pruebas médicas, con defunciones de todo tipo y causa. Esto plantea una debilidad de base en los resultados obtenidos y en conclusiones que se infieran de éstos, pero la magnitud de la incidencia de la pandemia es tal que por los propios resultados obtenidos esta deficiencia de origen se puede obviar para cierto tipo de conclusiones de carácter más general. Evidentemente esta deficiencia es inasumible para un estudio epidemiológico serio pero no para el tipo de análisis que se pretende con este documento, que no deja de ser informal pese a una mantener una estructura ordenada y con ciertas semejanzas con un artículo científico.
+
+## 13.- Análisis por grupos de edad y sexo de las defunciones ocurridas durante la primera ola de la pandemia
 
 En este apartado haremos una somera disección de los fallecimientos producidos durante la primera ola de la pandemia por grupos de edad y por sexo. Tomaremos como periodo de referencia para el análisis de datos el correspondiente al primer periodo de exceso de defunciones tal y como se definió y determinó más arriba.
 
@@ -824,7 +915,7 @@ TablaOla1 <- xtabs(defunciones ~ sexo + edad, data = DatosMoMoOla1)
 
 Nótese que los desgloses por sexo siempre suman una cantidad inferior al total agregado correspondiente. Esto no es un error de programación sino una deficiencia, característica intrínseca por decirlo de una forma eufemística, de los datos de partida, en los que para una fecha dada las sumas por sexos no llegan al "todos" correspondiente, ni en el agregado total ni en los subtotales por franjas de edad.
 
-Ante la disyuntavia de cómo continuar después de detectada esta discordancia, en vez de quedarnos con los números que representan las agregaciones "todos" (fila inferior y columna derecha), daremos por buenos los datos de detalle y calcularemos los nuevos agregados parciales y total.
+Ante la disyuntiva de cómo continuar después de detectada esta discordancia, en vez de quedarnos con los números que representan las agregaciones "todos" (fila inferior y columna derecha), daremos por buenos los datos de detalle y calcularemos los nuevos agregados parciales y total.
 
 ```{r Simplificación de tabla eliminando grupos "todos" Ola1}
 DatosMoMoOla1 <- DatosMoMoOla1[sexo != "todos",]
