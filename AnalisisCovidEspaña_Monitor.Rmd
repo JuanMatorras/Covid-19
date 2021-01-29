@@ -51,6 +51,8 @@ La fecha y hora de descarga de los datos que han sido utilizados para la elabora
 
 El análisis se ha llevado a cabo utilizando el software libre para análisis estadístico **R**, versión `r getRversion()` (1), complementado con los siguientes paquetes: **lubridate** (2), **knitr** (3), **tydiverse** (4), **ggplot2** (5) y **data.table** (6).
 
+**Nota:** Hay que llamar la atención sobre la naturaleza de los datos, los cuales proceden de la agregación de las aportaciones desde las CCAA al sistema RENAVE. Esto resulta en que los datos de casos de fechas recientes no están completos y esto hace que todas las gráficas con desagregación diaria o variables derivadas, como la incidencia acumulada, presenten siempre un tramo descendente en su extremo final, con independencia de si realmente el progreso de la enfermedad es de expansión o de contracción.
+
 ## 3.- Casos por meses y número total de casos detectados desde el inicio de 2020
 
 La evolución de número de casos notificados por meses se refleja en el gráfico que se muestra a continuación:
