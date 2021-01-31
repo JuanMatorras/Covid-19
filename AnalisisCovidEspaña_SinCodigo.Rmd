@@ -1,5 +1,6 @@
 ---
-title: "Análisis de la evolución de la incidencia de la COVID-19 en España desde el 1 de enero de 2020"
+title: "Análisis de la evolución de la incidencia de la COVID-19 en España desde el 1 de enero de 2020 hasta la actualidad"
+subtitle: "Una exploración de los datos de casos detectados de la COVID-19 y la mortalidad en España durante la pandemia mediante R y R Markdown (RStudio &reg;)"
 author: "Juan Matorras Díaz-Caneja"
 date: "`r format(Sys.time(), '%d/%m/%Y')`"
 output: pdf_document
@@ -36,6 +37,26 @@ poblESP <- 47.332E+06
 
 El archivo de datos no ha sido sometido a ningún tipo de modificación o alteración previa y su manipulación en este análisis es el mínimo imprescindible para permitir el tratamiento de los datos y obtención de resultados.
 
+```{r Descarga de archivos datos web en directorio "data"}
+## Creación de directorio para datos origen "data" si no existe ya
+if(!file.exists("./data")) {dir.create("./data")}
+## Direcciones URL de descarga de los datos de origen
+urlCasos <- "https://cnecovid.isciii.es/covid19/resources/casos_tecnica_ccaa.csv"
+urlMoMo <- "https://momo.isciii.es/public/momo/data"
+## Descarga de archivos
+## ***** ¡¡¡¡¡ AVISO IMPORTANTE !!!!! *****
+## Si hay archivos preexistentes no se lleva a cabo la descarga.
+## Para descargar nuevos archivos desde la web borre las versiones previas
+## o trasládelas a otro directorio si quiere conservar un histórico de archivos.
+if(!file.exists(file.path("data", "casos_tecnica_ccaa.csv"))) {
+        download.file(urlCasos, destfile = file.path("data", "casos_tecnica_ccaa.csv"), 
+                      method = "curl")
+}
+if(!file.exists(file.path("data", "data.csv"))) {
+        download.file(urlMoMo, destfile = file.path("data", "data.csv"), method = "curl")
+}
+```
+
 ```{r Lectura de Datos y Simplificación de tabla}
 ## Lectura de datos de origen
 DatosCompletos <- read.csv(file.path("data", "casos_tecnica_ccaa.csv"))
@@ -50,14 +71,14 @@ Datos <- DatosCCAAs %>% group_by(fecha) %>% summarise(num_casos = sum(num_casos)
 
 La fecha y hora de descarga de los datos que han sido utilizados para la elaboración de las tablas y gráficos incluídos en este informe ha sido (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "casos_tecnica_ccaa.csv"))`**
 
-El análisis se ha llevado a cabo utilizando el software libre para análisis estadístico **R**, versión `r getRversion()`. (1)
+El análisis se ha llevado a cabo utilizando el entorno de desarrollo integrado de **RStudio &copy;** versión `r rstudioapi::versionInfo()$version` (1) para el software libre de análisis estadístico **R**, versión `r getRversion()` (2).
 
-Se ha hecho uso también de los paquetes complementarios:
+Se ha hecho uso también de los siguiente paquetes complementarios para R:
 
-* **lubridate** para facilitar el manejo de fechas. (2)
-* **knitr** para mejorar la apariencia de tablas. (3)
-* **tydiverse** por los paquetes que incluye para ayudar en la extracción de la información y los gráficos mejorados de **ggplot2**. (4) y (5)
-* **data.table** con el objeto de manipular las tablas más eficientemente. (6)  
+* **lubridate** ver.`r packageVersion("lubridate")` para facilitar el manejo de fechas. (3)
+* **knitr** ver.`r packageVersion("knitr")` para mejorar la apariencia de tablas. (4)
+* **tydiverse** ver.`r packageVersion("tidyverse")` por los paquetes que incluye para ayudar en la extracción y manipulación de la información en tablas y los gráficos mejorados de **ggplot2** ver.`r packageVersion("ggplot2")`. (5) y (6)
+* **data.table** ver.`r packageVersion("data.table")` con el objeto de manipular las tablas más eficientemente. (7)  
 
 Nota 1: La codificación empleada en los datos fuente para la identificación de comunidades autónomas y provincias se corresponde con la ISO 3166-2:ES. La correspondencia entre dicha codificación y la comunidad autónoma o provincia referida puede ser consultada, entre otras fuentes, en: <https://es.wikipedia.org/wiki/ISO_3166-2:ES>
 
@@ -69,7 +90,7 @@ Nota 3: Hay que llamar la atención sobre la naturaleza de los datos, los cuales
 
 La evolución de número de casos notificados por meses se refleja en el gráfico que se muestra a continuación:
 
-```{r Incidencia Mensual}
+```{r Casos Mensuales}
 dfCasosMensuales <- Datos %>% group_by(Mes = floor_date(fecha, "month")) %>% 
         summarize(Casos = sum(num_casos), .groups = "drop")
 TablaCasosMensuales <- data.frame("Mes" = format(dfCasosMensuales$Mes, "%b %Y"), 
@@ -1001,22 +1022,25 @@ Como se puede ver, con estos datos no es posible afirmar que la COVID-19 en tér
 
 ## Apéndice - Referencias
 
-(1) R Core Team (2020). R: A language and environment for statistical computing.
+(1) RStudio Team (2021). RStudio: Integrated Development Environment for R.
+    RStudio, PBC, Boston, MA. URL: http://www.rstudio.com/
+
+(2) R Core Team (2020). R: A language and environment for statistical computing.
     R Foundation for Statistical Computing, Vienna, Austria. URL: 
     https://www.R-project.org/
 
-(2) Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with 
+(3) Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with 
     lubridate. Journal of Statistical Software, 40(3), 1-25. URL: 
     http://www.jstatsoft.org/v40/i03/
     
-(3) Yihui Xie (2020). knitr: A General-Purpose Package for Dynamic Report 
+(4) Yihui Xie (2020). knitr: A General-Purpose Package for Dynamic Report 
     Generation in R. R package version 1.30.
 
-(4) Wickham et al., (2019). Welcome to the tidyverse. Journal of Open
+(5) Wickham et al., (2019). Welcome to the tidyverse. Journal of Open
     Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
     
-(5) H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New
+(6) H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New
     York, 2016.
     
-(6) Matt Dowle and Arun Srinivasan (2020). data.table: Extension of `data.frame`. 
+(7) Matt Dowle and Arun Srinivasan (2020). data.table: Extension of `data.frame`. 
     R package version 1.13.2. https://CRAN.R-project.org/package=data.table

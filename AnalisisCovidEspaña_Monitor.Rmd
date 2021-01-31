@@ -1,6 +1,6 @@
 ---
-title: "Análisis de la evolución de la incidencia de la COVID-19 en España desde el 1 de enero de 2020"
-subtitle: "Versión abreviada para seguimiento"
+title: "Análisis de la evolución de la incidencia de la COVID-19 en España desde el 1 de enero de 2020 hasta la actualidad"
+subtitle: "Versión abreviada para seguimiento de casos y mortalidad mediante R y R Markdown (RStudio &reg;)"
 author: "Juan Matorras Díaz-Caneja"
 date: "`r format(Sys.time(), '%d/%m/%Y')`"
 output: pdf_document
@@ -35,6 +35,26 @@ poblESP <- 47.332E+06
 
 El archivo de datos no ha sido sometido a ningún tipo de modificación o alteración previa y su manipulación en este análisis es el mínimo imprescindible para permitir el tratamiento de los datos y obtención de resultados.
 
+```{r Descarga de archivos datos web en directorio "data"}
+## Creación de directorio para datos origen "data" si no existe ya
+if(!file.exists("./data")) {dir.create("./data")}
+## Direcciones URL de descarga de los datos de origen
+urlCasos <- "https://cnecovid.isciii.es/covid19/resources/casos_tecnica_ccaa.csv"
+urlMoMo <- "https://momo.isciii.es/public/momo/data"
+## Descarga de archivos
+## ***** ¡¡¡¡¡ AVISO IMPORTANTE !!!!! *****
+## Si hay archivos preexistentes no se lleva a cabo la descarga.
+## Para descargar nuevos archivos desde la web borre las versiones previas
+## o trasládelas a otro directorio si quiere conservar un histórico de archivos.
+if(!file.exists(file.path("data", "casos_tecnica_ccaa.csv"))) {
+        download.file(urlCasos, destfile = file.path("data", "casos_tecnica_ccaa.csv"), 
+                      method = "curl")
+}
+if(!file.exists(file.path("data", "data.csv"))) {
+        download.file(urlMoMo, destfile = file.path("data", "data.csv"), method = "curl")
+}
+```
+
 ```{r Lectura de Datos y Simplificación de tabla}
 ## Lectura de datos de origen
 DatosCompletos <- read.csv(file.path("data", "casos_tecnica_ccaa.csv"))
@@ -49,7 +69,7 @@ Datos <- DatosCCAAs %>% group_by(fecha) %>% summarise(num_casos = sum(num_casos)
 
 La fecha y hora de descarga de los datos que han sido utilizados para la elaboración de las tablas y gráficos incluídos en este informe ha sido (aaaa-mm-dd hh:mm:ss): **`r file.mtime(file.path("data", "casos_tecnica_ccaa.csv"))`**
 
-El análisis se ha llevado a cabo utilizando el software libre para análisis estadístico **R**, versión `r getRversion()` (1), complementado con los siguientes paquetes: **lubridate** (2), **knitr** (3), **tydiverse** (4), **ggplot2** (5) y **data.table** (6).
+El análisis se ha llevado a cabo utilizando el entorno de desarrollo integrado de **RStudio &copy;** versión `r rstudioapi::versionInfo()$version` (1) para el software libre de análisis estadístico **R**, versión `r getRversion()` (2), complementado con los paquetes: **lubridate** ver.`r packageVersion("lubridate")` (3), **knitr** ver.`r packageVersion("knitr")` (4), **tidyverse** ver.`r packageVersion("tidyverse")` (5), **ggplot2** ver.`r packageVersion("ggplot2")` (6) y **data.table** ver.`r packageVersion("data.table")` (7).
 
 **Nota:** Hay que llamar la atención sobre la naturaleza de los datos, los cuales proceden de la agregación de las aportaciones desde las CCAA al sistema RENAVE. Esto resulta en que los datos de casos de fechas recientes no están completos y esto hace que todas las gráficas con desagregación diaria o variables derivadas, como la incidencia acumulada, presenten siempre un tramo descendente en su extremo final, con independencia de si realmente el progreso de la enfermedad es de expansión o de contracción.
 
@@ -57,7 +77,7 @@ El análisis se ha llevado a cabo utilizando el software libre para análisis es
 
 La evolución de número de casos notificados por meses se refleja en el gráfico que se muestra a continuación:
 
-```{r Incidencia Mensual}
+```{r Casos Mensuales}
 dfCasosMensuales <- Datos %>% group_by(Mes = floor_date(fecha, "month")) %>% 
         summarize(Casos = sum(num_casos), .groups = "drop")
 TablaCasosMensuales <- data.frame("Mes" = format(dfCasosMensuales$Mes, "%b %Y"), 
@@ -89,31 +109,17 @@ El número total de casos acumulados desde el 1 de enero de 2020 hasta la fecha 
 
 Considerando una población en España de **`r format(poblESP/1E+06, big.mark = ".", decimal.mark = ",")`** millones de personas según los datos publicados por el INE (Instituto Nacional de Estadística) correspondientes al inicio del año 2020, el porcentaje de contagio de la población es del **`r PorcentajePoblacion`** hasta la fecha. Insistimos en que, puesto que la incidencia de la enfermedad en los primeros meses de 2020 está por fuerza minusvalorada por la escasez de pruebas de diagnóstico, y no pudiendo olvidar que además tenémos el fenómeno de los casos de infección asintomáticos, el porcentaje de población afectada realmente es necesariamente más alto que el reflejado en este cálculo y es más que probable que sea del orden del doble. De hecho, para poder cubrir esta laguna y tener una idea más fiable del verdadero impacto de la enfermedad sobre el total de la pobllación están los estudios de sero-epidemiología que se han venido realizando desde junio de 2020 (<https://portalcne.isciii.es/enecovid19/>).
 
-## 4.- Casos diarios
-
-### - Curva epidémica de los casos notificados por días:
-
 ```{r Incidencia Diaria}
 dfCasosDiarios <- data.frame(Fecha = Datos$fecha, Casos = Datos$num_casos)
-d <- ggplotCovid(dfCasosDiarios, aes(Fecha, Casos))
-d <- d + labs(y = "Casos diarios")
-d <- d + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
-                                                      big.mark=".", 
-                                                      decimal.mark=",")})
-d <- d + scale_x_date(breaks = seq(as.Date("2020-01-01"), tail(dfCasosDiarios$Fecha,1), 
-                                   by="3 months"), 
-                      date_minor_breaks = "1 month", 
-                      date_labels = "%b %Y")
-d + geom_col()
 ```
 
-## 5.- Evolución de la incidencia acumulada a lo largo de todo el periodo de análisis
+## 4.- Evolución de la incidencia acumulada en 14 días (IA14) y 7 días (IA7)
 
 En el siguiente gráfico se representan las incidencias acumuladas por cada 100.000 habitantes correspondientes a periodos de 14 y 7 días:
 
 ```{r Evolución de la Incidencia Acumulada}
 Fechas <- seq.Date(as.Date("2020-01-01"), by = "day", length.out = 
-                           length(dfCasosDiarios$Fecha))
+                           length(Datos$fecha))
 UltFecha <- Fechas[length(Fechas)]
 stopifnot(UltFecha == max(Datos$fecha))  ## Prueba interna consistencia datos
 
@@ -174,11 +180,9 @@ g
 
 Obviando el hecho ya comentado de la subestimación del primer pico de la ola por la baja realización de pruebas de diagnóstico, queda claro que, a pesar de que los medios de comunicación y, en consecuencia, la propia población general hablen de una tercera ola de la pandemia que arranca en el mes de diciembre, no habiendo bajado la IA14 de 200 sería más apropiado hablar de una segunda fase de la segunda ola puesto que ésta no se puede decir que llegó a estar bajo control. Si analizamos el impacto de la enfermedad desde el punto de vista de la mortalidad (ver apartado 9) sí que podríamos afirmar de algún modo que la segunda ola habría terminado a finales de diciembre, pero finalmente se ha fundido con el periodo de exceso posterior.
 
-## 6.- Comparación de la evolución del número de casos entre Madrid y otras CCAA
+## 5.- Comparación de la IA14 por CCAA y nacional
 
-### - Incidencia por cada 100.000 habitantes por CCAA
-
-En el siguiente gráfico se compara la evolución de la enfermedad entre comunidades muy diferentes: la Comunidad Autónoma de Madrid, Cantabria, Asturias, Galicia y Castilla y León, en términos de incidencia diaria (casos / 100.000 habitantes).
+En el siguiente gráfico se compara la evolución de la enfermedad entre comunidades muy diferentes (Comunidad Autónoma de Madrid, Cantabria, Asturias, Galicia, Castilla y León), junto con la evolución a nivel nacional en términos de incidencia aculada en 14 días por cada 100.000 habitantes.
 
 Los datos de población en cada comunidad para el cálculo son disponibles en el momento en el INE  (<https://www.ine.es/dynInfo/Infografia/Territoriales/capitulo.html#!tabla>).
 
@@ -212,33 +216,7 @@ IncidenciaCCAA <- data.frame(CasosDiariosCCAA$Fecha,
                              CasosDiariosCL$num_casos/poblCL*1E+05)
 colnames(IncidenciaCCAA) <- c("Fecha", "IncidMD", "IncidCB", "IncidAS", 
                               "IncidGA", "IncidCL")
-g <- ggplotCovid(IncidenciaCCAA, aes(Fecha))
-g <- g + labs(y = "Incidencia (Casos / 100.000 hab.)")
-g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
-                                                      big.mark=".", 
-                                                      decimal.mark=",")})
-g <- g + scale_x_date(breaks = seq(as.Date("2020-01-01"), 
-                                   tail(IncidenciaCCAA$Fecha,1), 
-                                   by="3 months"), 
-                      date_minor_breaks = "1 month", 
-                      date_labels = "%b %Y")
-g <- g + scale_color_manual(name="Incidencia diaria", 
-                           values = c("Madrid"="blue", "Cantabria"="red", 
-                                      "Asturias"="deepskyblue", 
-                                      "Galicia"="seagreen", 
-                                      "Castilla y León"="magenta"))
-g <- g + geom_step(aes(y=IncidMD, color="Madrid"))
-g <- g + geom_step(aes(y=IncidCB, color="Cantabria"))
-g <- g + geom_step(aes(y=IncidAS, color="Asturias"))
-g <- g + geom_step(aes(y=IncidGA, color="Galicia"))
-g <- g + geom_step(aes(y=IncidCL, color="Castilla y León"))
-g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
-g
 ```
-
-### - Comparación de la IA14 por CCAA y nacional
-
-Con el objetivo de completar la información comparativa entre estas comunidades se adjunta también la incidencia acumulada en 14 días para estas áreas geográficas, junto con la correspondiente al conjunto del territorio nacional:
 
 ```{r Incidencias acumuladas 14 días CCAA + España}
 InicioPeriodo14 <- as.Date("2020-01-01")
@@ -289,9 +267,9 @@ g <- g + theme(legend.position=c(.25, .95), legend.justification=c("left", "top"
 g
 ```
 
-## 7.- Evolución temporal de la tasa de variación de la incidencia acumulada en 14 días por cada 100.000 habitantes (IA14)
+## 6.- Tasa de variación de la incidencia acumulada en 14 días (IA14)
 
-En el siguiente gráfico lo que se representa es cómo varía la incidencia acumulada en 14 días por cada 100.000 habitantes (IA14) expresando la tasa de variación de esta incidencia como:
+En el siguiente gráfico se representa la evolución de la variación de la incidencia acumulada en 14 días por cada 100.000 habitantes (IA14) expresando la tasa de variación de esta incidencia como variación porcentual de la misma:
 
 tasaIA14(i) = (IA14(i)-IA14(i-1))/IA14(i-1)
 
@@ -379,7 +357,7 @@ Hay que hacer notar que, aunque la gráfica resultante tenga una apariencia simi
 
 Por otro lado es lógica esta similitud entre las gráficas de la tasa de evolución de la IA14 y la del número reproductivo básico instántaneo, ya que números reproductivos altos se corresponden con evoluciones crecientes en la incidencia de la enfermedad mientras que números reproductivos por debajo de 1 marcan evoluciones decrecientes de la incidencia en el número de casos.
 
-## 8.- Datos de mortalidad
+## 7.- Datos de mortalidad
 
 Los datos se han obtenido del enlace del **Instituto de Salud Carlos III**: <https://momo.isciii.es/public/momo/data>.
 
@@ -425,7 +403,7 @@ g
 
 Se ha agregado una línea de ajuste estadístico de las defunciones observadas para facilitar la visualización de la evolución de las mismas suavizando los dientes de sierra propios de las observaciones por tratarse de datos diarios.
 
-## 9.- Exceso de mortalidad
+## 8.- Exceso de mortalidad
 
 Técnicamente se define "periodo de exceso de mortalidad" cuando se cumplen las siguientes condiciones:
 
@@ -558,26 +536,90 @@ El índice de mortalidad de la COVID-19 en España en el periodo de estudio, med
 
 No podemos dejar de llamar la atención sobre el hecho de que en la determinación de las cifras de exceso de defunciones se ha utilizado como nivel de referencia el número de defunciones esperadas. Es perfectamente argumentable que durante el periodo de estado de alarma este nivel de comparación debería ser inferior al estadísticamente obtenido con datos de años previos ya que el propio estado de alarma tuvo por necesidad incidencia en el número de fallecimientos por accidente laboral y por accidente de tráfico, sin duda disminuyéndolos. Consecuentemente debería rebajarse el patrón de referencia de defunciones esperadas durante el estado de confinamiento y el exceso de defunciones por causa de la COVID-19 sería superior al mostrado más arriba. Aunque es posible realizar estimaciones de estas desviaciones con datos disponibles públicamente, dejamos esa posibilidad de perfeccionamiento del estudio para mejor oportunidad.
 
+## 9.- Exceso de mortalidad acumulada en 14 días (EMA14) y comparación con la IA14
+
+El gráfico que se incluye a continuación incluye la representación escalada (estadísticamente) de las dos variables siguientes para tener una idea visual de su correlación:
+
+* Incidencia diaria acumulada en 14 días por cada cien mil (100.000) habitantes.
+* Exceso de mortalidad acumulada en 14 días por cada millón (1.000.000) de habitantes.
+
+Definimos exceso de mortalidad acumulada en 14 días por millón de habitantes como la diferencia entre la mortalidad diaria acumulada observada menos la mortalidad acumulada esperada, calculadas ambas en periodos acumulativos de 14 días.
+
+Se representan datos correspondientes a fechas posteriores al 1 de julio de 2020 para evitar la distorsión que se genera durante la primera ola de la pandemia por la infravaloración del número de casos por la falta de disponibilidad de pruebas diagnósticas.
+
+```{r Mortalidades acumuladas en 14 días}
+## Inicialización de variables
+InicioPeriodo14 <- as.Date("2020-01-01")
+FinPeriodo14 <- InicioPeriodo14 + 13
+MortAcum14 <- data.frame(Fecha=as.Date(character()), MA14obs=double(), 
+                         MA14esp=double())
+
+## Mortalidades acumuladas en 14 días - observada y esperada
+while (FinPeriodo14 <= UltFecha) {
+        Periodo14 <- seq.Date(
+                from = InicioPeriodo14,
+                to = FinPeriodo14,
+                by = "day")
+        DatosMA14 <- subset(DatosMoMo, Fecha %in% Periodo14)
+        MortAcum14 <- add_row(MortAcum14, Fecha = FinPeriodo14, 
+                              MA14obs = sum(DatosMA14$DefObs)/poblESP*1E06, 
+                              MA14esp = sum(DatosMA14$DefEsp)/poblESP*1E06)
+        InicioPeriodo14 <- InicioPeriodo14 + 1
+        FinPeriodo14 <- FinPeriodo14 + 1
+}
+```
+
+```{r IA14 vs EMA14}
+## Preparando tabla de datos
+IA14vsEMA14 <- cbind(IncidAcum14, EMA14 = MortAcum14$MA14obs - MortAcum14$MA14esp)
+```
+
+```{r IA14 vs EMA14 desde 01/07/2020}
+## Preparando tabla de datos
+IA14vsEMA14s2 <- subset(IA14vsEMA14, Fecha > as.Date("2020-06-30"))
+## Gráfico - IA14 vs EMA14 desde 01/07/2020
+g <- ggplotCovid(IA14vsEMA14s2, aes(Fecha))
+g <- g + labs(y = "")
+g <- g + scale_y_continuous(labels=function(n){format(n, scientific=FALSE, 
+                                                      big.mark=".", 
+                                                      decimal.mark=",")})
+g <- g + scale_x_date(breaks = seq(as.Date("2020-07-01"), 
+                                   tail(IA14vsEMA14s2$Fecha,1), 
+                                   by="3 months"), 
+                      date_minor_breaks = "1 month", 
+                      date_labels = "%b %Y")
+g <- g + scale_color_manual(name = "Incidencia/Exceso Mortalidad 14 días", 
+                            values = c("Incidencia - IA14" = "blue", 
+                                       "Exc. Mort. - EMA14" = "red"))
+g <- g + geom_step(aes(y = scale(IA14), color = "Incidencia - IA14"))
+g <- g + geom_step(aes(y = scale(EMA14), color = "Exc. Mort. - EMA14"))
+g <- g + theme(legend.position=c(.05, .95), legend.justification=c("left", "top"))
+g
+```
+
 ....................
 
 ## Apéndice - Referencias
 
-(1) R Core Team (2020). R: A language and environment for statistical computing.
+(1) RStudio Team (2021). RStudio: Integrated Development Environment for R.
+    RStudio, PBC, Boston, MA. URL: http://www.rstudio.com/
+
+(2) R Core Team (2020). R: A language and environment for statistical computing.
     R Foundation for Statistical Computing, Vienna, Austria. URL: 
     https://www.R-project.org/
 
-(2) Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with 
+(3) Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with 
     lubridate. Journal of Statistical Software, 40(3), 1-25. URL: 
     http://www.jstatsoft.org/v40/i03/
     
-(3) Yihui Xie (2020). knitr: A General-Purpose Package for Dynamic Report 
+(4) Yihui Xie (2020). knitr: A General-Purpose Package for Dynamic Report 
     Generation in R. R package version 1.30.
 
-(4) Wickham et al., (2019). Welcome to the tidyverse. Journal of Open
+(5) Wickham et al., (2019). Welcome to the tidyverse. Journal of Open
     Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
     
-(5) H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New
+(6) H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New
     York, 2016.
     
-(6) Matt Dowle and Arun Srinivasan (2020). data.table: Extension of `data.frame`. 
+(7) Matt Dowle and Arun Srinivasan (2020). data.table: Extension of `data.frame`. 
     R package version 1.13.2. https://CRAN.R-project.org/package=data.table
