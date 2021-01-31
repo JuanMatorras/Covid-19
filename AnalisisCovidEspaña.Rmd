@@ -77,7 +77,7 @@ Se ha hecho uso también de los siguiente paquetes complementarios para R:
 
 * **lubridate** ver.`r packageVersion("lubridate")` para facilitar el manejo de fechas. (3)
 * **knitr** ver.`r packageVersion("knitr")` para mejorar la apariencia de tablas. (4)
-* **tydiverse** ver.`r packageVersion("tidyverse")` por los paquetes que incluye para ayudar en la extracción y manipulación de la información en tablas y los gráficos mejorados de **ggplot2** ver.`r packageVersion("ggplot2")`. (5) y (6)
+* **tidyverse** ver.`r packageVersion("tidyverse")` por los paquetes que incluye para ayudar en la extracción y manipulación de la información en tablas y los gráficos mejorados de **ggplot2** ver.`r packageVersion("ggplot2")`. (5) y (6)
 * **data.table** ver.`r packageVersion("data.table")` con el objeto de manipular las tablas más eficientemente. (7)  
 
 Nota 1: La codificación empleada en los datos fuente para la identificación de comunidades autónomas y provincias se corresponde con la ISO 3166-2:ES. La correspondencia entre dicha codificación y la comunidad autónoma o provincia referida puede ser consultada, entre otras fuentes, en: <https://es.wikipedia.org/wiki/ISO_3166-2:ES>
