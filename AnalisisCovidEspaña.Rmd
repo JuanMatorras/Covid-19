@@ -1010,13 +1010,13 @@ while (i < nrow(DatosMoMo)) { ## Recorrer tabla
         }
         i <- i + 1
 }
-## Unir periodos de exceso próximos (<= 2 días intermedios)
+## Unir periodos de exceso próximos (adyacentes o un día intermedio)
 PeriodosExcesoUnido <- data.table("Inicio"=as.Date(character()), 
                                   "Fin"=as.Date(character()))
 n <- as.integer(1)
 while (n <= nrow(PeriodosExceso)) {
         PeriodosExcesoUnidoInicioN <- PeriodosExceso$Inicio[n]
-        while (((PeriodosExceso$Inicio[n+1] - PeriodosExceso$Fin[n]) <= 3) &
+        while (((PeriodosExceso$Inicio[n+1] - PeriodosExceso$Fin[n]) <= 2) &
                n < nrow(PeriodosExceso)) {n <- n + 1}
         PeriodosExcesoUnidoFinN <- PeriodosExceso$Fin[n]
         PeriodosExcesoUnido <- add_row(PeriodosExcesoUnido, 
@@ -1030,8 +1030,8 @@ while (n <= nrow(PeriodosExceso)) {
 
 `r kable(PeriodosExceso, align = "c")`
 
--   Después de unificar los periodos de exceso cercanos (\<= 2 días
-    intermedios):
+-   Después de unificar los periodos de exceso cercanos (adyacentes o con un día
+    intermedio):
 
 `r kable(PeriodosExcesoUnido, align = "c")`
 
