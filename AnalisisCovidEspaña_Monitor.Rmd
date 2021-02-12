@@ -145,9 +145,12 @@ indicada en el punto anterior según los datos oficiales disponibles en ese
 momento ascienden a un total de
 **`r format(TotalCasosOrigen, big.mark = ".", decimal.mark = ",")`** personas.
 
-**Nota:** Existen datos discrepantes que están apareciendo en los datos
-correspondientes a enero de 2020 por errores en el registro de nuevos casos en
-enero de 2021 que se han asignado incorrectamente al año 2020.
+**Nota:** Durante el mes de enero de 2021 aparecieron datos discrepantes
+correspondientes a enero de 2020 por errores en el registro de nuevos casos que
+se habían asignado incorrectamente al año 2020 cuando correspondían al 2021. En
+la segunda semana de febrero esta deficiencia parece haber sido solucionada ya
+que el número total de casos de ene-2020 han vuelto a los valores que se
+reflejaban antes del cambio de año.
 
 Considerando una población en España de
 **`r format(poblESP/1E+06, big.mark = ".", decimal.mark = ",")`** millones de

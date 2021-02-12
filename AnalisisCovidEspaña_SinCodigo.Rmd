@@ -185,15 +185,6 @@ indicada en el punto anterior según los datos oficiales disponibles en ese
 momento ascienden a un total de
 **`r format(TotalCasosOrigen, big.mark = ".", decimal.mark = ",")`** personas.
 
-**Nota:** Véase el apartado 6 donde se explican los errores que están
-apareciendo en los datos correspondientes a enero de 2020 ya que se han estado
-cometiendo errores en el registro de nuevos casos en enero de 2021 que se han
-asignado incorrectamente al año 2020. De hecho, hasta final de 2020, el número
-total de casos reportados a nivel nacional para el mes de enero de ese año se
-movía por debajo de los 50 casos mientras que con los datos disponibles en los
-primeros días de enero de 2021 esta cifra fue aumentando llegando a alcanzar más
-de 550 casos.
-
 Lo que en cualquier caso es de conocimiento general es la carestía de pruebas
 diagnósticas durante la primera fase de la pandemia, lo que apunta a una clara
 subestimación de los casos reales en esos primeros meses de 2020,
@@ -304,25 +295,23 @@ d + geom_col()
 ```
 
 **NOTA IMPORTANTE:** Este gráfico ha permitido detectar un problema en los datos
-de origen que se está manifestando en los primeros días de 2021. Están
-apareciendo casos asignados a los primeros días de 2020 que antes no existían
-por un problema de deficiente registro de nuevos casos correspondientes
-realmente a 2021 que se están dando de alta con fecha de 2020. En el repositorio
-de GitHub al que se hace referencia al principio del documento se adjunta una
-tabla comparativa donde se puede observar cómo han evolucionado el número de
-casos declarados para enero de 2020 en las distintas CCAA entre los días finales
-de diciembre de 2020 y primeros días de 2021. Las mayores distorsiones se
-aprecian en los datos de las comunidades autónomas de Madrid y Cataluña en las
-que para los primeros días de enero de 2020 tenían declarados números de casos
-con cifras muy bajas, en general 0 o 1, y que durante los primeros días de enero
-de 2021 empiezan a mostrar cantidades de casos que superan la veintena y la
-treintena para esas fechas del año 2020. Se puso en conocimiento de este
-potencial problema al Centro de Estudios Epidemiológicos del Instituto de Salud
-Carlos III el día 8 de enero de 2021 desde donde confirmaron el problema el día
-19 de enero, informando que se esperaba corregir el problema en los días
-siguientes. Estos datos aparentemente erróneos no se han eliminado ni sufrido
-ningún tipo de tratamiento especial y se han manipulado como si fuesen correctos
-en espera de que se complete la revisión y se corrijan los datos fuente.
+de origen que se manifestó en los primeros días de 2021, apareciendo casos
+asignados a los primeros días de 2020 que antes no existían. Esto se debió a un
+deficiente registro de nuevos casos correspondientes realmente a 2021 que se
+están dando de alta con fecha de 2020. En el repositorio de GitHub al que se
+hace referencia al principio del documento se adjunta una tabla comparativa
+donde se puede observar cómo fueron evolucionado el número de casos declarados
+para enero de 2020 en las distintas CCAA entre los días finales de diciembre de
+2020 y primeros días de 2021. Las mayores distorsiones se aprecian en los datos
+de las comunidades autónomas de Madrid y Cataluña en las que para los primeros
+días de enero de 2020 tenían declarados números de casos con cifras muy bajas,
+en general 0 o 1, y que durante los primeros días de enero de 2021 empiezan a
+mostrar cantidades de casos que superan la veintena y la treintena para esas
+fechas del año 2020. Se puso en conocimiento de este problema al Centro de
+Estudios Epidemiológicos del Instituto de Salud Carlos III el día 8 de enero de
+2021 desde donde confirmaron el problema el día 19 de enero, informando que se
+esperaba corregir el problema en los días siguientes. Finalmente, a partir de la
+segunda semana de febrero los errores parecen haber sido ya corregidos.
 
 Los casos reportados totales a lo largo de esos dos meses son
 **`r format(TotalCasosEF, big.mark = ".", decimal.mark = ",")`**, si bien es
